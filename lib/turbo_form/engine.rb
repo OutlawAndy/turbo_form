@@ -1,5 +1,5 @@
-require 'turbo_form/form_helper'
-require 'turbo_form/form_builder'
+require "turbo_form/form_helper"
+require "turbo_form/form_builder"
 
 module TurboForm
   class Engine < ::Rails::Engine

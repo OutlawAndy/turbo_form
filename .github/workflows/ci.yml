@@ -22,7 +22,6 @@ jobs:
       CI: true
       RAILS_ENV: test
       RUBOCOP_CACHE_ROOT: tmp/rubocop
-      DEPENDENCIES_HASH: ${{ hashFiles('**/.rubocop.yml', '**/.rubocop_todo.yml', 'Gemfile.lock') }}
       # RAILS_MASTER_KEY: ${{ secrets.RAILS_MASTER_KEY }}
       # REDIS_URL: redis://localhost:6379/0
     steps:
@@ -34,17 +33,10 @@ jobs:
         with:
           path: ${{ env.RUBOCOP_CACHE_ROOT }}
           # TODO: What about Ruby Version??
-          key: rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-${{ github.ref_name == github.event.repository.default_branch && github.run_id || 'default' }}
+          key: rubocop-${{ runner.os }}-${{ hashFiles('.rubocop.yml', 'Gemfile.lock') }}-${{ github.run_id }}
           restore-keys: |
-            rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
+            rubocop-${{ runner.os }}-${{ hashFiles('.rubocop.yml', 'Gemfile.lock') }}-
 
       - run: bin/rubocop -f github
-      - run: bin/rails db:test:prepare test
+      - run: bin/rails test
 
-      - name: Keep screenshots from failed system tests
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: screenshots
-          path: ${{ github.workspace }}/tmp/screenshots
-          if-no-files-found: ignore
