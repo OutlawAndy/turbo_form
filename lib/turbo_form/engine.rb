@@ -1,5 +1,6 @@
 require "turbo_form/form_helper"
 require "turbo_form/form_builder"
+require "turbo_form/signature"
 
 module TurboForm
   class Engine < ::Rails::Engine
