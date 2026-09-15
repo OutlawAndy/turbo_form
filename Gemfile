@@ -10,6 +10,9 @@ gem "puma"
 # Record: it keeps the suite fast and proves the engine isn't coupled to the ORM.
 gem "activemodel"
 
+# Exercised by the engine's importmap integration test.
+gem "importmap-rails"
+
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
 gem "rubocop-rails-omakase", require: false
 

@@ -1,0 +1,13 @@
+{
+  "name": "turbo_form",
+  "version": "0.0.1",
+  "description": "Turbo-Stream backed dynamic forms for Rails, by convention.",
+  "module": "app/assets/javascripts/turbo_form.js",
+  "main": "app/assets/javascripts/turbo_form.js",
+  "type": "module",
+  "license": "MIT",
+  "peerDependencies": {
+    "@hotwired/stimulus": ">=3.0.0",
+    "@hotwired/turbo-rails": ">=8.0.0"
+  }
+}
