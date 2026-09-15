@@ -31,8 +31,10 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
   end
 
   private
-    # Standing in for the form, which doesn't know how to advertise this URL yet.
+    # The browser only ever learns this URL by reading it off the rendered form,
+    # so the test does the same.
     def dynamic_form_url
-      turbo_form_path(TurboForm::Signature.new(model_name: "Widget", scope: "widget"))
+      get new_widget_url
+      css_select("form").first["data-turbo-form-url-value"]
     end
 end

@@ -1,5 +1,5 @@
-<%= form_for @widget do |f| %>
-  <%= f.select :category, @widget.categories, include_blank: true %>
+<%= form_for @widget, dynamic: true do |f| %>
+  <%= f.select :category, @widget.categories, { include_blank: true }, dynamic_trigger: true %>
 
   <div id="flavor-field">
     <%= f.select :flavor, @widget.flavors %>

@@ -26,11 +26,15 @@ module TurboForm
     #   app.config.importmap.cache_sweepers << root.join("app/javascript")
     # end
 
-    initializer "turbo_form.initialize" do |app|
-      app.config.to_prepare do
-        ActionView::Helpers::FormHelper.prepend(TurboForm::FormHelper)
-        ActionView::Helpers::FormBuilder.prepend(TurboForm::FormBuilder)
-      end
+    # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that
+    # hook doesn't fire until Action View is first loaded, which in an app that
+    # isn't eager loading is partway through rendering the first view -- late
+    # enough that the first form on the first request can miss the patch.
+    initializer "turbo_form.form_helpers" do
+      require "action_view"
+
+      ActionView::Helpers::FormHelper.prepend(TurboForm::FormHelper)
+      ActionView::Helpers::FormBuilder.prepend(TurboForm::FormBuilder)
     end
   end
 end
