@@ -1,0 +1,55 @@
+name: Bump Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      bump-type:
+        description: SemVer Bump Type
+        required: false
+        default: --minor
+        type: choice
+        options:
+          - --patch
+          - --minor
+          - --major
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.RMS_VERSION_MANAGER_APP_ID }}
+          private-key: ${{ secrets.RMS_VERSION_MANAGER_CERT }}
+
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Configure git identity
+        run: |
+          git config user.name '${{ steps.app-token.outputs.app-slug }}[bot]'
+          git config user.email '${{ steps.app-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+
+      - name: Bump version
+        env:
+          BUMP_VERSION_ALLOWED: "true"
+          BUNDLE_FROZEN: "false"
+        run: bin/bump_version ${{ github.event.inputs['bump-type'] }}
+      - name: Install dependencies
+        run: bundle install
+      - name: Commit, Tag, and Push
+        run: bin/tag
