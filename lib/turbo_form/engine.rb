@@ -1,11 +1,14 @@
+require "turbo-rails"
 require "turbo_form/form_helper"
 require "turbo_form/form_builder"
 require "turbo_form/signature"
 
 module TurboForm
+  # Deliberately *not* `isolate_namespace`: the template this engine renders
+  # belongs to the host, and isolating would point its route helpers at this
+  # engine's own (empty) route set -- so `widgets_path` in a host's
+  # dynamic_form template would raise.
   class Engine < ::Rails::Engine
-    isolate_namespace TurboForm
-
     config.turbo_form = ActiveSupport::OrderedOptions.new
 
     initializer "turbo_form.assets" do |app|

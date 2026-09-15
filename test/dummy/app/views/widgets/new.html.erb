@@ -1,0 +1,7 @@
+<%= form_for @widget do |f| %>
+  <%= f.select :category, @widget.categories, include_blank: true %>
+
+  <div id="flavor-field">
+    <%= f.select :flavor, @widget.flavors %>
+  </div>
+<% end %>

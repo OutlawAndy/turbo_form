@@ -1,7 +1,18 @@
+require "active_support/core_ext/module/attribute_accessors"
 require "turbo_form/version"
 require "turbo_form/engine"
 
 module TurboForm
+  # The controller the engine's endpoint inherits from. Defaulting to the host's
+  # own `ApplicationController` means its `before_action`s -- authentication
+  # above all -- apply to dynamic renders for free. Point it elsewhere when that
+  # inheritance brings something the endpoint shouldn't have.
+  mattr_accessor :parent_controller, default: "ApplicationController"
+
+  # Set to false to keep the engine out of the host's route set and draw its
+  # route yourself.
+  mattr_accessor :draw_routes, default: true
+
   class << self
     attr_writer :verifier
 
