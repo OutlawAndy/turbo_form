@@ -9,22 +9,26 @@ module TurboForm
   # engine's own (empty) route set -- so `widgets_path` in a host's
   # dynamic_form template would raise.
   class Engine < ::Rails::Engine
-    config.turbo_form = ActiveSupport::OrderedOptions.new
+    # importmap-rails reads config.importmap.paths exactly once, in its own
+    # `importmap` initializer, and draws the host's pins last -- so appending
+    # here both registers ours and leaves the host able to override them.
+    # The guard keeps esbuild/vite/bun hosts booting; a `before:` naming an
+    # initializer that doesn't exist is itself harmless.
+    initializer "turbo_form.importmap", before: "importmap" do |app|
+      next unless app.config.respond_to?(:importmap)
 
-    initializer "turbo_form.assets" do |app|
-      if Rails.application.config.respond_to?(:assets)
-        app.config.assets.paths << root.join("app/javascript")
-        # app.config.assets.precompile += %w[app/assets/config/manifest.js]
-      end
+      app.config.importmap.paths << root.join("config/turbo_form_importmap.rb")
+      app.config.importmap.cache_sweepers << root.join("app/assets/javascripts")
     end
 
-    # initializer "turbo_form.importmap", before: "importmap" do |app|
-    #   # https://github.com/rails/importmap-rails#composing-import-maps
-    #   app.config.importmap.paths << root.join("config/importmap.rb")
+    # Propshaft puts every engine's app/assets/* on the load path by itself.
+    # Sprockets additionally wants the asset named, or the pin above silently
+    # resolves to nothing.
+    initializer "turbo_form.assets" do |app|
+      next unless app.config.respond_to?(:assets)
 
-    #   # https://github.com/rails/importmap-rails#sweeping-the-cache-in-development-and-test
-    #   app.config.importmap.cache_sweepers << root.join("app/javascript")
-    # end
+      app.config.assets.precompile << "turbo_form.js"
+    end
 
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that
     # hook doesn't fire until Action View is first loaded, which in an app that

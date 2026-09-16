@@ -1,0 +1,7 @@
+# Ship the Stimulus controller and nothing else.
+*
+!app/
+!app/assets/
+!app/assets/javascripts/
+!app/assets/javascripts/turbo_form.js
+!README.md
