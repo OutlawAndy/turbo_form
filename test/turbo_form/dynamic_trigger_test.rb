@@ -6,17 +6,17 @@ class DynamicTriggerTest < ActionView::TestCase
   # `true` leaves the event off the descriptor so Stimulus uses the element's
   # default -- `input` for a text field, `change` for a select.
   test "dynamic_trigger: true binds the element's default event" do
-    assert_equal "turbo-form#submit", field(:text_field, :notes, dynamic_trigger: true)["data-action"]
+    assert_equal "turbo-form#perform", field(:text_field, :notes, dynamic_trigger: true)["data-action"]
   end
 
   test "a named trigger binds that event" do
-    assert_equal "blur->turbo-form#submit", field(:text_field, :notes, dynamic_trigger: :blur)["data-action"]
+    assert_equal "blur->turbo-form#perform", field(:text_field, :notes, dynamic_trigger: :blur)["data-action"]
   end
 
   test "joins an action the caller already asked for" do
     attributes = field(:text_field, :notes, dynamic_trigger: true, data: { action: "autosave#queue" })
 
-    assert_equal "autosave#queue turbo-form#submit", attributes["data-action"]
+    assert_equal "autosave#queue turbo-form#perform", attributes["data-action"]
   end
 
   test "leaves untriggered fields alone" do
@@ -28,19 +28,19 @@ class DynamicTriggerTest < ActionView::TestCase
   test "reaches the select of a collection_select" do
     attributes = field(:collection_select, :category, Widget::FLAVORS.keys, :to_s, :titleize, dynamic_trigger: true)
 
-    assert_equal "turbo-form#submit", attributes["data-action"]
+    assert_equal "turbo-form#perform", attributes["data-action"]
     assert_nil attributes["dynamic_trigger"]
   end
 
   test "reaches the select of a plain select" do
-    assert_equal "turbo-form#submit", field(:select, :category, %w[fruit], dynamic_trigger: true)["data-action"]
+    assert_equal "turbo-form#perform", field(:select, :category, %w[fruit], dynamic_trigger: true)["data-action"]
   end
 
   # The shape SimpleForm produces: it passes `input_html:` through as html_options.
   test "is honoured from html_options too" do
     attributes = field(:select, :category, %w[fruit], {}, { dynamic_trigger: :change })
 
-    assert_equal "change->turbo-form#submit", attributes["data-action"]
+    assert_equal "change->turbo-form#perform", attributes["data-action"]
   end
 
   test "never leaks into the markup" do

@@ -9,7 +9,8 @@ import { Turbo } from "@hotwired/turbo-rails"
 export default class extends Controller {
   static values = { url: String, requests: Number }
 
-  async submit() {
+  async perform() {
+    this.trigger
     const response = await fetch(this.urlValue, {
       method: "PATCH",
       headers: this.#headers,

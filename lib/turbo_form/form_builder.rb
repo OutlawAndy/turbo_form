@@ -84,7 +84,7 @@ module TurboForm
       # own default: `change` for a select, `input` for a text field, `click` for
       # a button. Anything else is taken as the event name.
       def stimulus_action_for(trigger)
-        trigger == true ? "turbo-form#submit" : "#{trigger}->turbo-form#submit"
+        trigger == true ? "turbo-form#perform" : "#{trigger}->turbo-form#perform"
       end
   end
 end

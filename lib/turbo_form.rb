@@ -12,6 +12,7 @@ module TurboForm
   # Set to false to keep the engine out of the host's route set and draw its
   # route yourself.
   mattr_accessor :draw_routes, default: true
+  # mattr_accessor :authorize, default: ->(controller) { true }
 
   class << self
     attr_writer :verifier
