@@ -30,6 +30,29 @@ module TurboForm
       app.config.assets.precompile << "turbo_form.js"
     end
 
+    # Minitest's system tests descend from ActionDispatch::SystemTestCase, so
+    # the load hook reaches them. RSpec's don't -- RSpec::Rails::SystemExampleGroup
+    # assembles itself from Action Dispatch's parts instead of inheriting the
+    # case -- so they need telling separately, once RSpec is loaded but before
+    # any example group has been defined.
+    initializer "turbo_form.system_test_helper" do
+      ActiveSupport.on_load(:action_dispatch_system_test_case) do
+        require "turbo_form/system_test_helper"
+
+        include TurboForm::SystemTestHelper
+      end
+    end
+
+    config.after_initialize do
+      next unless defined?(RSpec.configure)
+
+      require "turbo_form/system_test_helper"
+
+      RSpec.configure do |config|
+        config.include TurboForm::SystemTestHelper, type: :system
+      end
+    end
+
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that
     # hook doesn't fire until Action View is first loaded, which in an app that
     # isn't eager loading is partway through rendering the first view -- late

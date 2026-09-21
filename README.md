@@ -148,17 +148,19 @@ application.register("turbo-form", TurboFormController)
 
 ### Testing against it
 
-The controller counts completed round trips, so a system test can wait on one
-instead of sleeping:
+A re-render is a round trip, so the line after a trigger is racing it. Wrap the
+trigger and the wait comes with it:
 
 ```ruby
-def expect_dynamic_form_request
-  form = find("[data-controller~='turbo-form']")
-  before = form["data-turbo-form-requests-value"].to_i
-  yield
-  assert_selector "[data-turbo-form-requests-value='#{before + 1}']"
-end
+expect_dynamic_form_request { select "Bourbon", from: "Category" }
+select "Barrel Aged", from: "Flavor"
 ```
+
+`expect_dynamic_form_request` is available in system tests with nothing to
+require or include — Minitest and RSpec both. It waits on the controller's
+count of completed round trips rather than on the fields that came back, so it
+doesn't care what the response changed. Scope it with Capybara's `within` when
+a page carries more than one dynamic form.
 
 ## What this deliberately doesn't do
 

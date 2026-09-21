@@ -13,6 +13,10 @@ gem "activemodel"
 # Exercised by the engine's importmap integration test.
 gem "importmap-rails"
 
+# ActionDispatch::SystemTestCase won't load without it, and the system test
+# helper is Capybara's to begin with.
+gem "capybara"
+
 # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
 gem "rubocop-rails-omakase", require: false
 
