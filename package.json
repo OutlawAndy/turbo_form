@@ -1,13 +1,36 @@
 {
-  "name": "turbo_form",
+  "name": "@rolemodel/turbo_form",
   "version": "0.1.0",
   "description": "Turbo-Stream backed dynamic forms for Rails, by convention.",
-  "module": "app/assets/javascripts/turbo_form.js",
-  "main": "app/assets/javascripts/turbo_form.js",
-  "type": "module",
+  "keywords": [
+    "Rails",
+    "Turbo",
+    "Hotwired",
+    "Dynamic",
+    "Form"
+  ],
+  "homepage": "https://github.com/OutlawAndy/turbo_form#readme",
+  "bugs": {
+    "url": "https://github.com/OutlawAndy/turbo_form/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OutlawAndy/turbo_form.git"
+  },
   "license": "MIT",
+  "author": "outlawandy@gmail.com",
+  "type": "module",
+  "main": "app/assets/javascripts/turbo_form.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
   "peerDependencies": {
     "@hotwired/stimulus": ">=3.0.0",
     "@hotwired/turbo-rails": ">=8.0.0"
-  }
+  },
+  "module": "app/assets/javascripts/turbo_form.js"
 }
