@@ -1,6 +1,6 @@
 {
   "name": "turbo_form",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Turbo-Stream backed dynamic forms for Rails, by convention.",
   "module": "app/assets/javascripts/turbo_form.js",
   "main": "app/assets/javascripts/turbo_form.js",
