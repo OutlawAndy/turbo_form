@@ -139,10 +139,10 @@ application.register("turbo-form", TurboFormController)
 the same version, and register it:
 
 ```bash
-yarn add turbo_form
+yarn add @rolemodel/turbo_form
 ```
 ```js
-import TurboFormController from "turbo_form"
+import TurboFormController from "@rolemodel/turbo_form"
 application.register("turbo-form", TurboFormController)
 ```
 
