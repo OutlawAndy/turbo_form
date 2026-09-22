@@ -1,4 +1,4 @@
-name: Publish New Gem Version to RubyGems.org
+name: Publish New Version
 
 on:
   release:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  push:
+  gem:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -18,3 +18,20 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with: { bundler-cache: true }
       - uses: rubygems/release-gem@v1
+
+  # The install generator pins the package to the gem's version, so a release
+  # that ships only the gem breaks `rails generate turbo_form:install` outright.
+  # They go out together or the pin is a lie.
+  npm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+      - run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

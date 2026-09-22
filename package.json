@@ -1,5 +1,5 @@
 {
-  "name": "@rolemodel/turbo_form",
+  "name": "@rolemodel/turbo-form",
   "version": "0.2.0",
   "description": "Turbo-Stream backed dynamic forms for Rails, by convention.",
   "keywords": [

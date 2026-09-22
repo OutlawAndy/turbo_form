@@ -31,6 +31,13 @@ class VersionBumper < Thor::Group
     gsub_file 'lib/turbo_form/version.rb', /^  VERSION = .*/, "  VERSION = '#{new_version_string}'"
   end
 
+  # The npm package is published from the same tag, and the install generator
+  # pins it to the gem's version. Bumping one without the other ships a pin
+  # that can't resolve.
+  def bump_package_version
+    gsub_file 'package.json', /"version": ".*"/, %("version": "#{new_version_string}")
+  end
+
   def echo_new_version
     say "New Gem Version is #{set_color(new_version_string, :yellow)}", :green
   end
