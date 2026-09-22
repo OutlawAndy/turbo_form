@@ -30,7 +30,24 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
   end
 
+  test "hands the controller and the rebuilt resource to the before_render hook" do
+    with_before_render ->(controller, resource) { controller.head :forbidden unless resource.category == "fruit" } do
+      patch dynamic_form_url, params: { widget: { category: "vegetable" } }, as: :turbo_stream
+      assert_response :forbidden
+
+      patch dynamic_form_url, params: { widget: { category: "fruit" } }, as: :turbo_stream
+      assert_response :success
+    end
+  end
+
   private
+    def with_before_render(hook)
+      TurboForm.before_render = hook
+      yield
+    ensure
+      TurboForm.before_render = nil
+    end
+
     # The browser only ever learns this URL by reading it off the rendered form,
     # so the test does the same.
     def dynamic_form_url
