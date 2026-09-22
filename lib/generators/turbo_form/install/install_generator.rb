@@ -1,0 +1,66 @@
+require "rails/generators"
+
+module TurboForm
+  module Generators
+    # There is nothing to install on importmap-rails: the engine pins its own
+    # Stimulus controller and a stock `app/javascript/controllers/index.js`
+    # registers it. Bundled apps get no such sweep, so this hands them the two
+    # things they'd otherwise write by hand -- the package and the registration.
+    class InstallGenerator < Rails::Generators::Base
+      source_root File.expand_path("templates", __dir__)
+
+      def install
+        if importmap?
+          say "turbo_form registers its own Stimulus controller on importmap-rails. Nothing to install."
+          return
+        end
+
+        install_package
+        register_controller
+        update_stimulus_manifest
+      end
+
+      private
+        def importmap? = Rails.root.join("config/importmap.rb").exist?
+
+        def install_package
+          return say_status :skip, "no package.json -- add #{package} yourself", :yellow unless Rails.root.join("package.json").exist?
+
+          run "#{package_manager} #{package}"
+        end
+
+        # Named for the controller it is, rather than imported into `index.js`:
+        # that file is rewritten wholesale every time `rails generate stimulus`
+        # runs, and would take a registration appended to it down with it. The
+        # manifest is generated from this directory instead, so a file named
+        # this way is picked back up every time and registered as `turbo-form`.
+        def register_controller
+          copy_file "turbo_form_controller.js", "app/javascript/controllers/turbo_form_controller.js"
+        end
+
+        # Left to Stimulus' own task rather than written here, the way the
+        # `stimulus` generator does it: the task is what the app already trusts
+        # to regenerate this file, and its internals have moved between releases.
+        def update_stimulus_manifest
+          return unless controllers_path.join("index.js").exist?
+
+          rails_command "stimulus:manifest:update"
+        end
+
+        def controllers_path = Rails.root.join("app/javascript/controllers")
+
+        def package = "@rolemodel/turbo-form@#{TurboForm::VERSION}"
+
+        # Matched to the lockfile that is already there, so the generator doesn't
+        # introduce a second package manager to an app that settled on one.
+        def package_manager
+          case
+          when Rails.root.join("yarn.lock").exist? then "yarn add"
+          when Rails.root.join("pnpm-lock.yaml").exist? then "pnpm add"
+          when Rails.root.join("bun.lockb").exist?, Rails.root.join("bun.lock").exist? then "bun add"
+          else "npm install"
+          end
+        end
+    end
+  end
+end
