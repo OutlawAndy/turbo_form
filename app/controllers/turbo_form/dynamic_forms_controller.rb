@@ -10,13 +10,22 @@ module TurboForm
       head :bad_request
     end
 
-    def update
-      @resource = signature.model.new(form_params)
+    before_action :build_resource
+    before_action :run_before_render_hook
 
+    def update
       render template: signature.template_for(@resource), formats: :turbo_stream
     end
 
     private
+      def build_resource
+        @resource = signature.model.new(form_params)
+      end
+
+      def run_before_render_hook
+        TurboForm.before_render&.call(self, @resource)
+      end
+
       def signature
         @signature ||= TurboForm::Signature.verify(params[:signature])
       end

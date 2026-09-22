@@ -97,7 +97,8 @@ endpoint the gem draws into your routes. Given a valid signature it:
 1. permits the submitted parameters wholesale,
 2. builds a **new, unsaved** instance of the form's class from them,
 3. assigns it to `@resource`,
-4. renders the turbo_stream template.
+4. calls `TurboForm.before_render` with the controller and the resource, if one is set,
+5. renders the turbo_stream template.
 
 Nothing is persisted, and the resource is always freshly instantiated — even for
 an edit form. `@resource` exists to be asked what the form should now look like,
@@ -112,14 +113,63 @@ may come from the browser unverified.
 ```ruby
 # config/initializers/turbo_form.rb
 
-# The endpoint inherits from this, so your authentication applies to it. If your
-# ApplicationController enforces something the endpoint can't satisfy -- Pundit's
-# `verify_authorized`, say -- point this at a controller that doesn't.
+# The endpoint inherits from this, so your authentication applies to it. Point
+# it at a narrower controller when that inheritance brings something the
+# endpoint shouldn't have.
 TurboForm.parent_controller = "ApplicationController"
 
 # Draw the route yourself instead.
 TurboForm.draw_routes = false
+
+# Run something before the render. See below.
+TurboForm.before_render = ->(controller, resource) { }
 ```
+
+### `before_render`
+
+The endpoint is a controller you never wrote, inheriting filters written for
+controllers that save things. `before_render` is where you get to treat it like
+one of your own: it runs in a `before_action`, after the signature is verified
+and the resource is built, and is handed the controller and that resource.
+
+Satisfy a filter the endpoint can't — the most common need, since nothing here
+is authorized because nothing here is saved:
+
+```ruby
+# Pundit's after_action :verify_authorized
+TurboForm.before_render = ->(controller, resource) { controller.skip_authorization }
+
+# Action Policy's verify_authorized
+TurboForm.before_render = ->(controller, resource) { controller.skip_verify_authorized! }
+```
+
+Or authorize it for real, if re-rendering a form is something you'd rather gate.
+Name the query explicitly: the endpoint's action is `update`, which is not the
+permission you mean.
+
+```ruby
+# Pundit
+TurboForm.before_render = ->(controller, resource) { controller.authorize(resource, :edit?) }
+
+# Action Policy
+TurboForm.before_render = ->(controller, resource) { controller.authorize!(resource, to: :edit?) }
+
+# CanCanCan -- this also satisfies `check_authorization`, which has no runtime skip
+TurboForm.before_render = ->(controller, resource) { controller.authorize!(:edit, resource) }
+```
+
+Anything else a controller does is fair game — set an ivar the template needs,
+branch on the resource's class:
+
+```ruby
+TurboForm.before_render = ->(controller, resource) do
+  controller.instance_variable_set(:@current_account, controller.current_user.account)
+end
+```
+
+Raising works the way it does in any `before_action`: your
+`rescue_from`s catch it, since the endpoint inherits them too. Rendering or
+redirecting from the controller halts the chain as usual.
 
 ## JavaScript
 
