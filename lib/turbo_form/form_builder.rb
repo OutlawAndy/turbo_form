@@ -75,16 +75,30 @@ module TurboForm
         attributes = attributes.except(:dynamic_trigger)
         return attributes unless trigger
 
+        event, url, query = destructure_trigger(trigger)
+
         data = (attributes[:data] || {}).dup
-        data[:action] = [ data[:action], stimulus_action_for(trigger) ].compact.join(" ")
+        data[:action] = [ data[:action], stimulus_action_for(event) ].compact.join(" ")
+        data[:turbo_form_url_param] = url if url
+        data[:turbo_form_query_param] = query if query
         attributes.merge(data: data)
       end
 
-      # `true` leaves the event off the descriptor so Stimulus binds the element's
-      # own default: `change` for a select, `input` for a text field, `click` for
-      # a button. Anything else is taken as the event name.
-      def stimulus_action_for(trigger)
-        trigger == true ? "turbo-form#perform" : "#{trigger}->turbo-form#perform"
+      # The short forms say when to fire and nothing else. The hash form also
+      # says where to send the form and what to send with it, which is what a
+      # field needs when it answers to a different action than its own form does.
+      def destructure_trigger(trigger)
+        return trigger.values_at(:event, :url, :params) if trigger.is_a?(Hash)
+
+        [ trigger, nil, nil ]
+      end
+
+      # `true` -- or a hash that names no event -- leaves the event off the
+      # descriptor so Stimulus binds the element's own default: `change` for a
+      # select, `input` for a text field, `click` for a button. Anything else is
+      # taken as the event name.
+      def stimulus_action_for(event)
+        event.nil? || event == true ? "turbo-form#perform" : "#{event}->turbo-form#perform"
       end
   end
 end

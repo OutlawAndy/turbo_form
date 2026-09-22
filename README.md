@@ -72,6 +72,30 @@ checkbox, `input` for a text field, `click` for a button. Name an event when you
 want something else — `:blur` on text fields is usually what you want, since the
 default fires on every keystroke.
 
+#### Sending the form somewhere else
+
+A trigger can answer to a different endpoint than its own form, and can add to
+what the form sends:
+
+```erb
+<%= f.button "Run", type: "button", dynamic_trigger: {
+      event: :click,
+      url: formula_preview_widgets_path,
+      params: { attribute: :rafter_count }
+    } %>
+```
+
+`url:` replaces the form's own endpoint for that one trigger; everything else on
+the form keeps using the form's. `params:` are appended to the submitted form
+data, so one endpoint can tell which of several triggers asked. Both are
+optional, and either can be given without the other.
+
+That endpoint is yours, not the gem's — it's an ordinary action rendering an
+ordinary turbo_stream template, so the whole form arrives as `params` under its
+usual scope. Use it when one form feeds several actions: a dozen fields that
+each preview themselves, or a select that belongs to a nested form with its own
+controller.
+
 Works on every Rails field helper, including the select and date families where
 Rails keeps HTML attributes in a separate hash:
 
