@@ -23,6 +23,11 @@ jobs:
   push:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # `bundler-cache: true` leaves bundler in deployment mode, which is frozen,
+    # and that outlives the step that set it. Every step from the bump onward
+    # has to write the lockfile: the bump changes the gemspec's version.
+    env:
+      BUNDLE_FROZEN: "false"
     steps:
       - name: Generate app token
         id: app-token
@@ -47,7 +52,6 @@ jobs:
       - name: Bump version
         env:
           BUMP_VERSION_ALLOWED: "true"
-          BUNDLE_FROZEN: "false"
         run: bin/bump_version ${{ github.event.inputs['bump-type'] }}
       - name: Install dependencies
         run: bundle install
