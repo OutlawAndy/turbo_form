@@ -158,15 +158,6 @@ TurboForm.before_render = ->(controller, resource) { controller.authorize!(resou
 TurboForm.before_render = ->(controller, resource) { controller.authorize!(:edit, resource) }
 ```
 
-Anything else a controller does is fair game — set an ivar the template needs,
-branch on the resource's class:
-
-```ruby
-TurboForm.before_render = ->(controller, resource) do
-  controller.instance_variable_set(:@current_account, controller.current_user.account)
-end
-```
-
 Raising works the way it does in any `before_action`: your
 `rescue_from`s catch it, since the endpoint inherits them too. Rendering or
 redirecting from the controller halts the chain as usual.

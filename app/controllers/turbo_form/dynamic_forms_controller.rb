@@ -11,7 +11,7 @@ module TurboForm
     end
 
     before_action :build_resource
-    before_action :run_before_render_hook
+    before_action { TurboForm.before_render&.call(self, @resource) }
 
     def update
       render template: signature.template_for(@resource), formats: :turbo_stream
@@ -20,10 +20,6 @@ module TurboForm
     private
       def build_resource
         @resource = signature.model.new(form_params)
-      end
-
-      def run_before_render_hook
-        TurboForm.before_render&.call(self, @resource)
       end
 
       def signature
