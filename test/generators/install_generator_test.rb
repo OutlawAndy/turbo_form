@@ -4,10 +4,20 @@ require "generators/turbo_form/install/install_generator"
 require "stimulus/manifest"
 
 class InstallGeneratorTest < Rails::Generators::TestCase
+  COMMANDS = []
+
+  # Whatever the generator would shell out to, remembered instead of run: the
+  # suite has an opinion about which package manager is chosen, none about
+  # whether yarn works.
+  module RecordsCommands
+    def run(command, *) = COMMANDS << command
+  end
+  TurboForm::Generators::InstallGenerator.prepend(RecordsCommands)
+
   tests TurboForm::Generators::InstallGenerator
   destination File.expand_path("../../tmp/generator", __dir__)
 
-  setup :prepare_destination
+  setup { COMMANDS.clear }
   setup { @original_root = Rails.application.config.root }
   teardown { Rails.application.config.root = @original_root }
 
@@ -47,28 +57,23 @@ class InstallGeneratorTest < Rails::Generators::TestCase
 
   test "installs the package with the manager the app already keeps a lockfile for" do
     {
-      "yarn.lock" => "yarn add", "pnpm-lock.yaml" => "pnpm add", "bun.lock" => "bun add"
+      "yarn.lock" => "yarn add", "pnpm-lock.yaml" => "pnpm add", "bun.lock" => "bun add", nil => "npm install"
     }.each do |lockfile, manager|
       in_app do
-        FileUtils.touch File.join(destination_root, lockfile)
+        FileUtils.touch File.join(destination_root, lockfile) if lockfile
+        run_generator
 
-        assert_equal "#{manager} @rolemodel/turbo-form@#{TurboForm::VERSION}",
-          "#{generator.send(:package_manager)} #{generator.send(:package)}"
+        assert_equal [ "#{manager} @rolemodel/turbo-form@#{TurboForm::VERSION}" ], COMMANDS
       end
     end
   end
 
-  test "installs with npm when no lockfile names anything else" do
-    in_app { assert_equal "npm install", generator.send(:package_manager) }
-  end
-
   private
     # The generator reads the app it is installing into off `Rails.root`, and
-    # the app under test is the destination, not the dummy. `package.json` is
-    # left out of it on purpose: without one the generator skips the install,
-    # so the suite never shells out to a package manager.
+    # the app under test is the destination, not the dummy.
     def in_app
       prepare_destination
+      COMMANDS.clear
       FileUtils.mkdir_p File.join(destination_root, "config")
       FileUtils.mkdir_p File.join(destination_root, "app/javascript/controllers")
       File.write(File.join(destination_root, "app/javascript/controllers/application.js"), "")

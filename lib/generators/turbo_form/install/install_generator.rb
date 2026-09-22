@@ -9,6 +9,11 @@ module TurboForm
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path("templates", __dir__)
 
+      LOCKFILES = {
+        "yarn.lock" => "yarn add", "pnpm-lock.yaml" => "pnpm add",
+        "bun.lock" => "bun add", "bun.lockb" => "bun add"
+      }.freeze
+
       def install
         if importmap?
           say "turbo_form registers its own Stimulus controller on importmap-rails. Nothing to install."
@@ -24,8 +29,6 @@ module TurboForm
         def importmap? = Rails.root.join("config/importmap.rb").exist?
 
         def install_package
-          return say_status :skip, "no package.json -- add #{package} yourself", :yellow unless Rails.root.join("package.json").exist?
-
           run "#{package_manager} #{package}"
         end
 
@@ -42,24 +45,17 @@ module TurboForm
         # `stimulus` generator does it: the task is what the app already trusts
         # to regenerate this file, and its internals have moved between releases.
         def update_stimulus_manifest
-          return unless controllers_path.join("index.js").exist?
+          return unless Rails.root.join("app/javascript/controllers/index.js").exist?
 
           rails_command "stimulus:manifest:update"
         end
-
-        def controllers_path = Rails.root.join("app/javascript/controllers")
 
         def package = "@rolemodel/turbo-form@#{TurboForm::VERSION}"
 
         # Matched to the lockfile that is already there, so the generator doesn't
         # introduce a second package manager to an app that settled on one.
         def package_manager
-          case
-          when Rails.root.join("yarn.lock").exist? then "yarn add"
-          when Rails.root.join("pnpm-lock.yaml").exist? then "pnpm add"
-          when Rails.root.join("bun.lockb").exist?, Rails.root.join("bun.lock").exist? then "bun add"
-          else "npm install"
-          end
+          LOCKFILES.find { |lockfile, _| Rails.root.join(lockfile).exist? }&.last || "npm install"
         end
     end
   end
