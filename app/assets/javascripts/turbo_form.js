@@ -9,12 +9,18 @@ import { Turbo } from "@hotwired/turbo-rails"
 export default class extends Controller {
   static values = { url: String, requests: Number }
 
-  async perform() {
-    this.trigger
-    const response = await fetch(this.urlValue, {
+  // A trigger can send the form somewhere other than the form's own endpoint,
+  // and can add to what it sends. Both ride in as Stimulus action params, so
+  // one form can feed several actions without needing several forms.
+  async perform({ params: { url, query } }) {
+    const body = new FormData(this.element)
+
+    if (query) Object.entries(query).forEach(([name, value]) => body.append(name, value))
+
+    const response = await fetch(url || this.urlValue, {
       method: "PATCH",
       headers: this.#headers,
-      body: new FormData(this.element)
+      body
     })
 
     if (!response.ok) return

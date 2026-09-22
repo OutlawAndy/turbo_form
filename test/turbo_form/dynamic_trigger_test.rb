@@ -19,8 +19,39 @@ class DynamicTriggerTest < ActionView::TestCase
     assert_equal "autosave#queue turbo-form#perform", attributes["data-action"]
   end
 
+  # The field that answers to a different endpoint than its own form: the URL
+  # rides on the trigger, so one form can feed several actions.
+  test "a trigger can name its own url" do
+    attributes = field(:text_field, :notes, dynamic_trigger: { url: "/preview" })
+
+    assert_equal "turbo-form#perform", attributes["data-action"]
+    assert_equal "/preview", attributes["data-turbo-form-url-param"]
+  end
+
+  test "a trigger can name an event alongside its url" do
+    attributes = field(:text_field, :notes, dynamic_trigger: { event: :blur, url: "/preview" })
+
+    assert_equal "blur->turbo-form#perform", attributes["data-action"]
+    assert_equal "/preview", attributes["data-turbo-form-url-param"]
+  end
+
+  # Stimulus JSON-parses a param, so the server can be told which of several
+  # things on the page asked -- without the form carrying it as a field.
+  test "a trigger can send extra params with the form" do
+    attributes = field(:text_field, :notes, dynamic_trigger: { params: { attribute: "rafter_count" } })
+
+    assert_equal %({"attribute":"rafter_count"}), attributes["data-turbo-form-query-param"]
+  end
+
   test "leaves untriggered fields alone" do
     assert_nil field(:text_field, :notes)["data-action"]
+  end
+
+  test "leaves the params off a trigger that names none" do
+    attributes = field(:text_field, :notes, dynamic_trigger: :blur)
+
+    assert_nil attributes["data-turbo-form-url-param"]
+    assert_nil attributes["data-turbo-form-query-param"]
   end
 
   # Ruby folds a trailing `dynamic_trigger:` into `collection_select`'s `options`
@@ -30,6 +61,12 @@ class DynamicTriggerTest < ActionView::TestCase
 
     assert_equal "turbo-form#perform", attributes["data-action"]
     assert_nil attributes["dynamic_trigger"]
+  end
+
+  test "carries a trigger's url across to a select" do
+    attributes = field(:select, :category, %w[fruit], dynamic_trigger: { url: "/preview" })
+
+    assert_equal "/preview", attributes["data-turbo-form-url-param"]
   end
 
   test "reaches the select of a plain select" do
