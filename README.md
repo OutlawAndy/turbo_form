@@ -37,10 +37,15 @@ That's the whole feature. No route, no controller, no JavaScript.
 gem "turbo_form"
 ```
 
-There is nothing to mount and nothing to generate. On a stock Rails app —
-Propshaft, importmap-rails, stimulus-rails — the Stimulus controller registers
-itself. See [JavaScript](#javascript) if your app bundles with esbuild, Vite,
-Bun or webpack.
+There is nothing to mount. On a stock Rails app — Propshaft, importmap-rails,
+stimulus-rails — the Stimulus controller registers itself and there is nothing
+to generate either. If your app bundles with esbuild, Vite, Bun or webpack:
+
+```bash
+rails generate turbo_form:install
+```
+
+See [JavaScript](#javascript) for what that does and how to do it by hand.
 
 ## The two options
 
@@ -200,16 +205,26 @@ import TurboFormController from "controllers/turbo_form_controller"
 application.register("turbo-form", TurboFormController)
 ```
 
-**esbuild, Vite, Bun, webpack** — install the npm package alongside the gem, at
-the same version, and register it:
+**esbuild, Vite, Bun, webpack** — there is no sweep to pick the controller up,
+so the package has to be installed alongside the gem, at the same version, and
+registered. `rails generate turbo_form:install` does both: it adds the package
+with whichever manager your lockfile names, and writes
 
-```bash
-yarn add @rolemodel/turbo-form
-```
 ```js
+// app/javascript/controllers/turbo_form_controller.js
 import TurboFormController from "@rolemodel/turbo-form"
-application.register("turbo-form", TurboFormController)
+
+export default TurboFormController
 ```
+
+Registering by *filename* rather than by appending to
+`app/javascript/controllers/index.js` is deliberate. That file is regenerated
+from the contents of the directory every time `rails generate stimulus` runs, so
+a registration appended to it lasts until the next controller you generate. A
+file named `turbo_form_controller.js` is picked up by that same regeneration and
+registered as `turbo-form`, every time.
+
+To do it by hand, write that file yourself and run `rails stimulus:manifest:update`.
 
 ### Testing against it
 
