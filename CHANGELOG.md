@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- The endpoint rebuilds the form's own object instead of a blank one. An edit
+  form's record is found again by id, so nested records posted with ids no
+  longer raise `RecordNotFound`; a new form keeps the attributes it was built
+  with, such as a parent's foreign key. Active Record resources are rebuilt in a
+  transaction that is always rolled back, since some assignments save on the spot.
+
+## 0.3.0
+
 - `dynamic_trigger:` takes a hash: `{ event:, url:, params: }`. A trigger can now
   send the form to an endpoint of its own and add to what it sends, so one form
   can feed several actions.

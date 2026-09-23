@@ -9,6 +9,18 @@ class TurboForm::SignatureTest < ActiveSupport::TestCase
     assert_equal "shared/refresh", signature.template
   end
 
+  test "round trips where the form's object came from" do
+    assert_equal 7, verify(TurboForm::Signature.new(model_name: "Widget", scope: "widget", id: 7)).id
+    assert_equal({ "notes" => "kept" }, verify(TurboForm::Signature.new(model_name: "Widget", scope: "widget", seed: { notes: "kept" })).seed)
+  end
+
+  test "rebuilds an unsaved object from its seed, letting what was typed win" do
+    signature = TurboForm::Signature.new(model_name: "Widget", scope: "widget", seed: { "notes" => "kept", "category" => "fruit" })
+    widget = signature.rebuild(ActionController::Parameters.new(category: "vegetable").permit!)
+
+    assert_equal [ "kept", "vegetable" ], [ widget.notes, widget.category ]
+  end
+
   test "resolves the model class it names" do
     assert_equal Widget, TurboForm::Signature.new(model_name: "Widget", scope: "widget").model
   end

@@ -10,6 +10,11 @@ gem "puma"
 # Record: it keeps the suite fast and proves the engine isn't coupled to the ORM.
 gem "activemodel"
 
+# Only the endpoint's rollback of writes is Active Record's business, so only
+# its test loads it -- the dummy app still boots without.
+gem "activerecord", require: false
+gem "sqlite3", require: false
+
 # Exercised by the engine's importmap integration test.
 gem "importmap-rails"
 

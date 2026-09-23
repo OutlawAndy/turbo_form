@@ -124,18 +124,24 @@ A `dynamic: true` form carries a signed description of itself to a single
 endpoint the gem draws into your routes. Given a valid signature it:
 
 1. permits the submitted parameters wholesale,
-2. builds a **new, unsaved** instance of the form's class from them,
+2. rebuilds the form's object and assigns them to it — an edit form's record is
+   found again by id, and a new form's object is rebuilt from the attributes it
+   was built with (a parent's foreign key from `@order.line_items.new`, say) before
+   the submitted ones are applied,
 3. assigns it to `@resource`,
 4. calls `TurboForm.before_render` with the controller and the resource, if one is set,
 5. renders the turbo_stream template.
 
-Nothing is persisted, and the resource is always freshly instantiated — even for
-an edit form. `@resource` exists to be asked what the form should now look like,
-not to be saved.
+Nothing is persisted. `@resource` exists to be asked what the form should now
+look like, not to be saved — and since Active Record saves some assignments on
+the spot (`has_many` writers, `*_ids=`), an Active Record resource is rebuilt
+inside a transaction that is always rolled back.
 
-The signature covers the class name, the parameter scope and the template. It is
-signed because the endpoint constantizes and renders what it names; none of that
-may come from the browser unverified.
+The signature covers the class name, the parameter scope, the template, and the
+record's id or starting attributes. It is signed because the endpoint
+constantizes, loads and renders what it names; none of that may come from the
+browser unverified. It is not encrypted, so those starting attributes are
+readable in the page, as the form itself is.
 
 ## Configuration
 
@@ -245,9 +251,7 @@ a page carries more than one dynamic form.
 ## What this deliberately doesn't do
 
 It handles the common case well and gets out of the way otherwise. There is no
-debouncing, no request cancellation, no loading state, no per-element URL
-override, and no hook for loading an existing record instead of building a new
-one. When you need those, write the action by hand — that path is still open,
+debouncing, no request cancellation and no loading state. When you need those, write the action by hand — that path is still open,
 and this gem doesn't stand in front of it.
 
 ## License
