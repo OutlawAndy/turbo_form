@@ -6,6 +6,9 @@ module TurboForm
   # constantized and instantiated, `template` gets rendered. Neither may come
   # from the client unverified.
   #
+  # `prefixes` are the view paths the form was rendered under, so the endpoint
+  # can find its template and partials the way the form's own controller would.
+  #
   # It also says where the form's object came from, so the endpoint can rebuild
   # that object rather than a blank one: the `id` of a saved record, or the
   # `seed` of attributes an unsaved one already had -- the `tank_id` of
@@ -20,12 +23,13 @@ module TurboForm
       new(**payload.symbolize_keys)
     end
 
-    attr_reader :model_name, :scope, :template, :id, :seed
+    attr_reader :model_name, :scope, :template, :prefixes, :id, :seed
 
-    def initialize(model_name:, scope:, template: nil, id: nil, seed: {})
+    def initialize(model_name:, scope:, template: nil, prefixes: [], id: nil, seed: {})
       @model_name = model_name
       @scope = scope
       @template = template
+      @prefixes = prefixes
       @id = id
       @seed = seed
     end
@@ -40,14 +44,8 @@ module TurboForm
       model.find(id).tap { |resource| resource.assign_attributes(params) }
     end
 
-    # By convention the template sits alongside the resource's own partial:
-    # `widgets/_widget` gets `widgets/dynamic_form`.
-    def template_for(resource)
-      template || File.join(File.dirname(resource.to_partial_path), "dynamic_form")
-    end
-
     def to_s
-      TurboForm.verifier.generate({ model_name:, scope:, template:, id:, seed: })
+      TurboForm.verifier.generate({ model_name:, scope:, template:, prefixes:, id:, seed: })
     end
     alias to_param to_s
   end

@@ -8,6 +8,13 @@
   with, such as a parent's foreign key. Active Record resources are rebuilt in a
   transaction that is always rolled back, since some assignments save on the spot.
 
+- **Breaking:** `dynamic: true` finds its template next to the view that
+  rendered the form rather than next to the model's partial, so a form on
+  `decks/new` gets `decks/dynamic_form` even when `Deck#to_partial_path` points
+  elsewhere. Partials rendered from the template now resolve relative to that
+  view too, instead of needing full paths. Forms rendered before upgrading carry
+  no view paths and need a reload.
+
 ## 0.3.0
 
 - `dynamic_trigger:` takes a hash: `{ event:, url:, params: }`. A trigger can now

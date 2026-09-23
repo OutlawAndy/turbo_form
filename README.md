@@ -51,9 +51,12 @@ See [JavaScript](#javascript) for what that does and how to do it by hand.
 
 ### `dynamic:` on the form
 
-`dynamic: true` wires the form up and points it at
-`app/views/<resource dir>/dynamic_form.turbo_stream.*` — alongside the
-resource's own partial, so `widgets/_widget` gets `widgets/dynamic_form`.
+`dynamic: true` wires the form up and points it at a `dynamic_form` template
+found the way the controller that rendered the form would find one of its own
+actions: a form on `widgets/new` gets `widgets/dynamic_form.turbo_stream.*`,
+falling back to `application/dynamic_form` through controller inheritance.
+Partials rendered from that template resolve the same way, so
+`render "fields"` finds `widgets/_fields` just as it would in the form itself.
 
 Pass a string to render something else instead:
 
@@ -137,8 +140,8 @@ look like, not to be saved — and since Active Record saves some assignments on
 the spot (`has_many` writers, `*_ids=`), an Active Record resource is rebuilt
 inside a transaction that is always rolled back.
 
-The signature covers the class name, the parameter scope, the template, and the
-record's id or starting attributes. It is signed because the endpoint
+The signature covers the class name, the parameter scope, the template, the view
+paths the form was rendered under, and the record's id or starting attributes. It is signed because the endpoint
 constantizes, loads and renders what it names; none of that may come from the
 browser unverified. It is not encrypted, so those starting attributes are
 readable in the page, as the form itself is.

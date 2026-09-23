@@ -15,7 +15,7 @@ module TurboForm
     before_action { TurboForm.before_render&.call(self, @resource) }
 
     def update
-      render template: signature.template_for(@resource), formats: :turbo_stream
+      render signature.template || "dynamic_form", formats: :turbo_stream
     end
 
     private
@@ -32,6 +32,17 @@ module TurboForm
           yield
           raise ActiveRecord::Rollback
         end
+      end
+
+      # Renders as if it were the controller that rendered the form, so the
+      # template's relative partials resolve the way the form's own did.
+      #
+      # Read while the lookup context is built, before `rescue_from` is in play,
+      # so a bad signature falls through here and is answered by the action.
+      def _prefixes
+        signature.prefixes
+      rescue TurboForm::Signature::Invalid
+        super
       end
 
       def signature

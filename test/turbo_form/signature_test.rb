@@ -39,18 +39,6 @@ class TurboForm::SignatureTest < ActiveSupport::TestCase
     assert_raises(TurboForm::Signature::Invalid) { TurboForm::Signature.verify("nonsense") }
   end
 
-  test "names the template that sits alongside the resource's own partial" do
-    signature = TurboForm::Signature.new(model_name: "Widget", scope: "widget")
-
-    assert_equal "widgets/dynamic_form", signature.template_for(Widget.new)
-  end
-
-  test "prefers an explicitly signed template" do
-    signature = TurboForm::Signature.new(model_name: "Widget", scope: "widget", template: "shared/refresh")
-
-    assert_equal "shared/refresh", signature.template_for(Widget.new)
-  end
-
   private
     def verify(signature) = TurboForm::Signature.verify(signature.to_s)
 end

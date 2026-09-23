@@ -17,6 +17,7 @@ module TurboForm
         model_name: object.class.name,
         scope: scope.to_s,
         template: (dynamic unless dynamic == true),
+        prefixes: lookup_context.prefixes,
         **origin_of(object)
       )
 
