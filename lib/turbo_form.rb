@@ -13,12 +13,12 @@ module TurboForm
   # route yourself.
   mattr_accessor :draw_routes, default: true
 
-  # Called from a `before_action` with the controller and the resource the form
-  # was rebuilt into. The endpoint is an inherited controller the host never
-  # wrote, so this is where it gets to treat it like one of its own: authorize
-  # the render, skip a filter the endpoint can't satisfy
-  # (`controller.skip_authorization`), set something the template needs. Left
-  # alone, only the host's own inherited filters apply.
+  # Run as the body of a `before_action`, inside the endpoint, and handed the
+  # resource the form was rebuilt into. The endpoint is an inherited controller
+  # the host never wrote, so this is where it gets to treat it like one of its
+  # own: authorize the render, skip a filter the endpoint can't satisfy
+  # (`skip_authorization`), set something the template needs. Left alone, only
+  # the host's own inherited filters apply.
   mattr_accessor :before_render
 
   class << self

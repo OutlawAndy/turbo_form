@@ -15,6 +15,12 @@
   view too, instead of needing full paths. Forms rendered before upgrading carry
   no view paths and need a reload.
 
+- **Breaking:** `TurboForm.before_render` runs inside the endpoint and takes only
+  the resource: `->(resource) { authorize resource, :new? }`. Protected helpers
+  such as Pundit's `authorize` and `skip_authorization` were out of reach of the
+  old `->(controller, resource)` form. Drop the `controller` argument and its
+  receiver.
+
 ## 0.3.0
 
 - `dynamic_trigger:` takes a hash: `{ event:, url:, params: }`. A trigger can now

@@ -38,8 +38,8 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
     assert_response :bad_request
   end
 
-  test "hands the controller and the rebuilt resource to the before_render hook" do
-    with_before_render ->(controller, resource) { controller.head :forbidden unless resource.category == "fruit" } do
+  test "runs the before_render hook inside the controller, with the rebuilt resource" do
+    with_before_render ->(resource) { gatekeep(resource) } do
       patch dynamic_form_url, params: { widget: { category: "vegetable" } }, as: :turbo_stream
       assert_response :forbidden
 

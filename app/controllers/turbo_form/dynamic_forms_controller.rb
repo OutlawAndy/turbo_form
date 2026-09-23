@@ -12,7 +12,7 @@ module TurboForm
 
     around_action :discard_writes
     before_action :build_resource
-    before_action { TurboForm.before_render&.call(self, @resource) }
+    before_action { instance_exec(@resource, &TurboForm.before_render) if TurboForm.before_render }
 
     def update
       render signature.template || "dynamic_form", formats: :turbo_stream
