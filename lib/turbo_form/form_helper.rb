@@ -16,7 +16,8 @@ module TurboForm
       signature = TurboForm::Signature.new(
         model_name: object.class.name,
         scope: scope.to_s,
-        template: (dynamic unless dynamic == true)
+        template: (dynamic unless dynamic == true),
+        **origin_of(object)
       )
 
       wire_dynamic_form(options, signature)
@@ -24,6 +25,16 @@ module TurboForm
     end
 
     private
+      # A saved record is found again by id. An unsaved one is rebuilt from what
+      # it had already been given -- a parent's foreign key, say -- since the
+      # form may not submit that back. A plain form object with no dirty
+      # tracking has nothing to carry.
+      def origin_of(object)
+        return { id: object.id } if object.try(:persisted?)
+
+        { seed: object.try(:changes).to_h.transform_values(&:last) }
+      end
+
       # `form_for` funnels HTML attributes through options[:html] while `form_with`
       # takes them at the top level. Write wherever the caller already is, and sit
       # alongside any Stimulus controller they asked for rather than replacing it.
