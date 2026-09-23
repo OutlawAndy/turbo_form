@@ -16,6 +16,7 @@ class DynamicOptionTest < ActionView::TestCase
     assert_equal "Widget", signature.model_name
     assert_equal "widget", signature.scope
     assert_nil signature.template
+    assert_equal lookup_context.prefixes, signature.prefixes
   end
 
   test "form_with is wired the same way, since form_for funnels through it" do

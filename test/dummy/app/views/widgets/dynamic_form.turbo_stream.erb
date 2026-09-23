@@ -1,6 +1,6 @@
 <%= fields model: @resource do |f| %>
   <%= turbo_stream.update "flavor-field" do %>
     <%= link_to "back", widgets_path %>
-    <%= f.select :flavor, @resource.flavors %>
+    <%= render "flavor", f: %>
   <% end %>
 <% end %>

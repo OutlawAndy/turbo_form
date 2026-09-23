@@ -29,7 +29,7 @@ class SavedRecordTest < ActionDispatch::IntegrationTest
 
   private
     def dynamic_form_url(**origin)
-      turbo_form_path(TurboForm::Signature.new(model_name: "Gadget", scope: "gadget", **origin))
+      turbo_form_path(TurboForm::Signature.new(model_name: "Gadget", scope: "gadget", prefixes: [ "gadgets" ], **origin))
     end
 end
 

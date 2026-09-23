@@ -24,6 +24,14 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
     assert_select "turbo-stream a[href=?]", "/widgets", text: "back"
   end
 
+  test "finds the template through the prefixes the form was rendered under" do
+    signature = TurboForm::Signature.new(model_name: "Widget", scope: "widget", prefixes: %w[missing widgets])
+    patch turbo_form_path(signature), params: { widget: { category: "fruit" } }, as: :turbo_stream
+
+    assert_response :success
+    assert_select "turbo-stream[target=flavor-field]"
+  end
+
   test "refuses a signature it did not sign" do
     patch "/turbo_form/forged--0000", params: { widget: { category: "fruit" } }, as: :turbo_stream
 
