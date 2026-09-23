@@ -51,22 +51,22 @@ See [JavaScript](#javascript) for what that does and how to do it by hand.
 
 ### `dynamic:` on the form
 
-`dynamic: true` wires the form up and points it at a `dynamic_form` template
-found the way the controller that rendered the form would find one of its own
-actions: a form on `widgets/new` gets `widgets/dynamic_form.turbo_stream.*`,
-falling back to `application/dynamic_form` through controller inheritance.
-Partials rendered from that template resolve the same way, so
-`render "fields"` finds `widgets/_fields` just as it would in the form itself.
+`dynamic: true` makes the form dynamic. When a trigger fires, the gem renders a
+template named `dynamic_form`, looked up just as the controller that rendered
+the form would look up one of its own views:
 
-Pass a string to render something else instead:
+- A form rendered by `WidgetsController` gets
+  `widgets/dynamic_form.turbo_stream.erb`.
+- If that doesn't exist, lookup follows controller inheritance, ending at
+  `application/dynamic_form.turbo_stream.erb`.
+- Partials resolve the same way, so `render "fields"` inside the template finds
+  `widgets/_fields`, just as it would in the form itself.
+
+To render a different template, pass its name instead of `true`:
 
 ```erb
 <%= form_for @widget, dynamic: "shared/refresh_widget" %>
 ```
-
-Works on `form_for` and `form_with` alike. Any template engine works — the
-template is resolved the way every other Rails template is, so `.slim` and
-`.haml` are fine.
 
 ### `dynamic_trigger:` on a field
 
