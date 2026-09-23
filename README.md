@@ -68,9 +68,6 @@ To render a different template, pass its name instead of `true`:
 <%= form_for @widget, dynamic: "shared/refresh_widget" %>
 ```
 
-`dynamic:` works on both `form_for` and `form_with`, and with any template
-engine Rails can render, including Slim and Haml.
-
 ### `dynamic_trigger:` on a field
 
 ```erb
