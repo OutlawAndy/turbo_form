@@ -9,13 +9,13 @@ class SavedRecordTest < ActionDispatch::IntegrationTest
 
     patch dynamic_form_url(id: gadget.id), params: { gadget: { category: "vegetable" } }, as: :turbo_stream
 
-    assert_select "turbo-stream[target=gadget] template", text: "kept vegetable 0"
+    assert_select "turbo-stream[target=gadget] template", text: "Gadget kept vegetable 0"
   end
 
   test "a new form keeps what it was built with, though the form never sends it" do
     patch dynamic_form_url(seed: { "name" => "seeded" }), params: { gadget: { category: "fruit" } }, as: :turbo_stream
 
-    assert_select "turbo-stream[target=gadget] template", text: "seeded fruit 0"
+    assert_select "turbo-stream[target=gadget] template", text: "Gadget seeded fruit 0"
   end
 
   test "writes that assignment makes on its own are rolled back" do
@@ -23,8 +23,24 @@ class SavedRecordTest < ActionDispatch::IntegrationTest
 
     patch dynamic_form_url(id: gadget.id), params: { gadget: { gear_ids: [ "" ] } }, as: :turbo_stream
 
-    assert_select "turbo-stream[target=gadget] template", text: /kept\s+0/
+    assert_select "turbo-stream[target=gadget] template", text: /Gadget kept\s+0/
     assert_equal 1, gadget.gears.reload.size
+  end
+
+  test "an edit form rebuilds as the subclass it was switched to, keeping what was saved" do
+    gizmo = Gizmo.create!(name: "kept")
+
+    patch dynamic_form_url(id: gizmo.id), params: { gadget: { type: "Doohickey", category: "fruit" } }, as: :turbo_stream
+
+    assert_select "turbo-stream[target=gadget] template", text: "Doohickey kept fruit 0"
+  end
+
+  test "an edit form that doesn't mention the type keeps the saved subclass" do
+    gizmo = Gizmo.create!(name: "kept")
+
+    patch dynamic_form_url(id: gizmo.id), params: { gadget: { category: "fruit" } }, as: :turbo_stream
+
+    assert_select "turbo-stream[target=gadget] template", text: "Gizmo kept fruit 0"
   end
 
   private
@@ -41,6 +57,10 @@ class SavedRecordFormTest < ActionView::TestCase
 
     assert_kind_of Integer, signature.id
     assert_empty signature.seed
+  end
+
+  test "a subclass's form signs its base class, so the type can change" do
+    assert_equal "Gadget", signature_in(form_with(model: Gizmo.new, url: "/", dynamic: true) { "" }).model_name
   end
 
   test "an unsaved record is signed with what it was built with" do
