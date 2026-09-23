@@ -28,7 +28,7 @@ class VersionBumper < Thor::Group
   end
 
   def bump_version
-    gsub_file 'lib/turbo_form/version.rb', /^  VERSION = .*/, "  VERSION = '#{new_version_string}'"
+    gsub_file 'lib/turbo_form/version.rb', /^  VERSION = .*/, %(  VERSION = "#{new_version_string}")
   end
 
   # The npm package is published from the same tag, and the install generator
