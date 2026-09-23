@@ -37,16 +37,28 @@ module TurboForm
     def model = model_name.constantize
 
     # The form's object as the user now has it. A new one is built in a single
-    # step so the submitted `type` still picks an STI subclass.
+    # step so the submitted `type` picks its STI subclass.
     def rebuild(params)
       return model.new(seed.merge(params.to_h)) unless id
 
-      model.find(id).tap { |resource| resource.assign_attributes(params) }
+      retype(model.find(id), params).tap { |resource| resource.assign_attributes(params) }
     end
 
     def to_s
       TurboForm.verifier.generate({ model_name:, scope:, template:, prefixes:, id:, seed: })
     end
     alias to_param to_s
+
+    private
+      # `find` answers with the subclass that was saved, not the one just picked.
+      # Let `new` choose by Active Record's own STI rules, and switch before
+      # assigning so nested records land on the object that is kept.
+      def retype(record, params)
+        type = params.to_h.slice(model.try(:inheritance_column).to_s)
+        return record if type.empty?
+
+        subclass = model.new(type).class
+        record.instance_of?(subclass) ? record : record.becomes(subclass)
+      end
   end
 end

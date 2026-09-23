@@ -14,7 +14,7 @@ module TurboForm
 
       scope ||= model_name_from_record_or_class(object).param_key
       signature = TurboForm::Signature.new(
-        model_name: object.class.name,
+        model_name: (object.class.try(:base_class) || object.class).name,
         scope: scope.to_s,
         template: (dynamic unless dynamic == true),
         prefixes: lookup_context.prefixes,

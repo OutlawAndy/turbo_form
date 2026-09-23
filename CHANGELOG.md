@@ -21,6 +21,11 @@
   old `->(controller, resource)` form. Drop the `controller` argument and its
   receiver.
 
+- A form for an STI subclass signs its base class, and a rebuilt record takes
+  the subclass its submitted `type` names — so switching type on a new or edit
+  form re-renders as the new subclass instead of raising `SubclassNotFound` or
+  keeping the saved one.
+
 ## 0.3.0
 
 - `dynamic_trigger:` takes a hash: `{ event:, url:, params: }`. A trigger can now
