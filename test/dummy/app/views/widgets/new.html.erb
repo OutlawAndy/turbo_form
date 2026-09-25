@@ -1,7 +1,12 @@
 <%= form_for @widget, dynamic: true do |f| %>
+  <%= f.label :category %>
   <%= f.select :category, @widget.categories, { include_blank: true }, dynamic_trigger: true %>
 
   <div id="flavor-field">
+    <%= f.label :flavor %>
     <%= f.select :flavor, @widget.flavors %>
   </div>
+
+  <%= f.label :notes %>
+  <%= f.text_field :notes %>
 <% end %>

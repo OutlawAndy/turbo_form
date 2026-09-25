@@ -1,13 +1,9 @@
 require "turbo-rails"
 require "turbo_form/form_helper"
 require "turbo_form/form_builder"
-require "turbo_form/signature"
+require "turbo_form/reload"
 
 module TurboForm
-  # Deliberately *not* `isolate_namespace`: the template this engine renders
-  # belongs to the host, and isolating would point its route helpers at this
-  # engine's own (empty) route set -- so `widgets_path` in a host's
-  # dynamic_form template would raise.
   class Engine < ::Rails::Engine
     # importmap-rails reads config.importmap.paths exactly once, in its own
     # `importmap` initializer, and draws the host's pins last -- so appending
@@ -51,6 +47,10 @@ module TurboForm
       RSpec.configure do |config|
         config.include TurboForm::SystemTestHelper, type: :system
       end
+    end
+
+    initializer "turbo_form.reload" do |app|
+      app.middleware.use TurboForm::Reload::Middleware
     end
 
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that
