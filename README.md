@@ -144,8 +144,8 @@ reads and posts under the same name, and permit `type` in the params method.
 A form inside a `<turbo-frame>`, or one naming a frame with
 `data-turbo-frame`, asks for that frame alone: the request carries the
 `Turbo-Frame` header, turbo-rails renders without the layout, and only the frame
-is morphed. `data-turbo-frame="_top"` means the whole page, as it does for
-Turbo. While the request is out, the form and its frame are `aria-busy`, and the
+is morphed. A frame's own `target` is followed, and `_top` means the whole page,
+as they do for Turbo. While the request is out, the form and its frame are `aria-busy`, and the
 frame `busy`, the way Turbo marks a submission.
 
 ### After a failed save
@@ -214,9 +214,11 @@ It handles the common case well and gets out of the way otherwise.
 - **Resourceful pages only.** The form's URL comes from its model, so a page
   whose `new` or `edit` isn't the model's own route has nowhere to send it.
 - **Not a Turbo form submission.** Turbo renders a form's response only when it
-  redirects or fails, so the trigger fetches and morphs itself: no
-  `turbo:submit-start`/`turbo:submit-end` or `turbo:before-fetch-request`
-  events, no progress bar, and a frame's own `target="_top"` isn't followed.
+  redirects or fails, so the trigger fetches the form itself and hands the
+  response to a Turbo visit. Turbo renders the page — its morph, render events,
+  error page and progress bar — but there are no `turbo:submit-start`,
+  `turbo:submit-end` or `turbo:before-fetch-request` events. A frame is morphed
+  directly, without Turbo's frame render events.
 - **Only the primary database is rolled back**, and only writes: jobs enqueued
   or mail sent during a trigger still happen.
 
