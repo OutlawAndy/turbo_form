@@ -1,6 +1,6 @@
 # turbo_form
 
-Turbo-Stream backed dynamic forms for Rails, by convention.
+Dynamic forms for Rails, by convention.
 
 A form that needs to change as it is filled in — a dependent dropdown, a section
 that appears once you pick a type — usually costs you a route, a controller
@@ -10,26 +10,18 @@ instead:
 ```erb
 <%= form_for @widget, dynamic: true do |f| %>
   <%= f.select :category, @widget.categories, {}, dynamic_trigger: true %>
-
-  <div id="flavor-field">
-    <%= f.select :flavor, @widget.flavors %>
-  </div>
+  <%= f.select :flavor, @widget.flavors %>
 <% end %>
 ```
 
-Pick a category and the form is sent to the server as it currently stands. The
-server rebuilds `@resource` from what you typed and renders
-`app/views/widgets/dynamic_form.turbo_stream.erb`:
+Pick a category and the page reloads with the form as it currently stands. The
+form assigns what was typed to `@widget` before its fields render, so
+`@widget.flavors` answers for the category just picked. Turbo morphs the page in
+place, so focus, scroll and everything else typed survive the reload.
 
-```erb
-<%= fields model: @resource do |f| %>
-  <%= turbo_stream.update "flavor-field" do %>
-    <%= f.select :flavor, @resource.flavors %>
-  <% end %>
-<% end %>
-```
-
-That's the whole feature. No route, no controller, no JavaScript.
+That's the whole feature. No route, no controller action, no template, no
+JavaScript. The page is rendered by its own controller, so its authentication,
+authorization and partials are the ones it always had.
 
 ## Installation
 
@@ -37,9 +29,9 @@ That's the whole feature. No route, no controller, no JavaScript.
 gem "turbo_form"
 ```
 
-There is nothing to mount. On a stock Rails app — Propshaft, importmap-rails,
-stimulus-rails — the Stimulus controller registers itself and there is nothing
-to generate either. If your app bundles with esbuild, Vite, Bun or webpack:
+On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus
+controller registers itself and there is nothing to generate. If your app
+bundles with esbuild, Vite, Bun or webpack:
 
 ```bash
 rails generate turbo_form:install
@@ -51,22 +43,9 @@ See [JavaScript](#javascript) for what that does and how to do it by hand.
 
 ### `dynamic:` on the form
 
-`dynamic: true` makes the form dynamic. When a trigger fires, the gem renders a
-template named `dynamic_form`, looked up just as the controller that rendered
-the form would look up one of its own views:
-
-- A form rendered by `WidgetsController` gets
-  `widgets/dynamic_form.turbo_stream.erb`.
-- If that doesn't exist, lookup follows controller inheritance, ending at
-  `application/dynamic_form.turbo_stream.erb`.
-- Partials resolve the same way, so `render "fields"` inside the template finds
-  `widgets/_fields`, just as it would in the form itself.
-
-To render a different template, pass its name instead of `true`:
-
-```erb
-<%= form_for @widget, dynamic: "shared/refresh_widget" %>
-```
+`dynamic: true` makes the form dynamic: on a reload, it assigns the submitted
+values under its scope to its object, via `assign_attributes`, before any field
+renders.
 
 ### `dynamic_trigger:` on a field
 
@@ -79,30 +58,6 @@ To render a different template, pass its name instead of `true`:
 checkbox, `input` for a text field, `click` for a button. Name an event when you
 want something else — `:blur` on text fields is usually what you want, since the
 default fires on every keystroke.
-
-#### Sending the form somewhere else
-
-A trigger can answer to a different endpoint than its own form, and can add to
-what the form sends:
-
-```erb
-<%= f.button "Run", type: "button", dynamic_trigger: {
-      event: :click,
-      url: formula_preview_widgets_path,
-      params: { attribute: :rafter_count }
-    } %>
-```
-
-`url:` replaces the form's own endpoint for that one trigger; everything else on
-the form keeps using the form's. `params:` are appended to the submitted form
-data, so one endpoint can tell which of several triggers asked. Both are
-optional, and either can be given without the other.
-
-That endpoint is yours, not the gem's — it's an ordinary action rendering an
-ordinary turbo_stream template, so the whole form arrives as `params` under its
-usual scope. Use it when one form feeds several actions: a dozen fields that
-each preview themselves, or a select that belongs to a nested form with its own
-controller.
 
 Works on every Rails field helper, including the select and date families where
 Rails keeps HTML attributes in a separate hash:
@@ -121,85 +76,49 @@ inherits from, so it works without SimpleForm being involved at all:
   = f.input :category, input_html: { dynamic_trigger: true }
 ```
 
-## What the endpoint does
+## What a reload does
 
-A `dynamic: true` form carries a signed description of itself to a single
-endpoint the gem draws into your routes. Given a valid signature it:
+A trigger visits the page's own URL with the form's fields in the query string,
+leaving out the authenticity token and `_method`, and marks the request with an
+`X-Turbo-Form` header. On the server:
 
-1. permits the submitted parameters wholesale,
-2. rebuilds the form's object and assigns them to it — an edit form's record is
-   found again by id, and a new form's object is rebuilt from the attributes it
-   was built with (a parent's foreign key from `@order.line_items.new`, say) before
-   the submitted ones are applied,
-3. assigns it to `@resource`,
-4. runs `TurboForm.before_render` inside the controller with the resource, if one is set,
-5. renders the turbo_stream template.
+1. the page's controller runs as it would for any visit, building `@widget` the
+   way it always does — found by id, built from a parent, whatever it does,
+2. the form assigns the submitted values to that object as it starts to render,
+3. the whole request runs inside a database transaction that is always rolled
+   back.
 
-Nothing is persisted. `@resource` exists to be asked what the form should now
-look like, not to be saved — and since Active Record saves some assignments on
-the spot (`has_many` writers, `*_ids=`), an Active Record resource is rebuilt
-inside a transaction that is always rolled back.
+Only a request carrying the header is assigned anything. A plain link can't set
+a header, and another origin can't without a CORS preflight, so a hand-crafted
+URL with form values in it renders the page as if they weren't there.
 
-The signature covers the class name, the parameter scope, the template, the view
-paths the form was rendered under, and the record's id or starting attributes. It is signed because the endpoint
-constantizes, loads and renders what it names; none of that may come from the
-browser unverified. It is not encrypted, so those starting attributes are
-readable in the page, as the form itself is.
+The rollback is there because Active Record saves some assignments on the spot
+(`has_many` writers, `*_ids=`). A reload exists to render, so nothing it does is
+kept — including anything else the action writes.
 
-## Configuration
+### Needing the values before the form
 
-```ruby
-# config/initializers/turbo_form.rb
-
-# The endpoint inherits from this, so your authentication applies to it. Point
-# it at a narrower controller when that inheritance brings something the
-# endpoint shouldn't have.
-TurboForm.parent_controller = "ApplicationController"
-
-# Draw the route yourself instead.
-TurboForm.draw_routes = false
-
-# Run something before the render. See below.
-TurboForm.before_render = ->(resource) { }
-```
-
-### `before_render`
-
-The endpoint is a controller you never wrote, inheriting filters written for
-controllers that save things. `before_render` is where you get to treat it like
-one of your own: it runs in a `before_action`, after the signature is verified
-and the resource is built, and is handed that resource. It runs *inside* the
-controller, so its protected helpers — Pundit's among them — are in reach.
-
-Satisfy a filter the endpoint can't — the most common need, since nothing here
-is authorized because nothing here is saved:
+The form assigns as it starts to render, so everything from the form down — and
+the layout, which Rails renders after the template — sees what was typed. The
+controller, and anything in the template above the form, sees the object as it
+was built. When those need it too, assign in the action:
 
 ```ruby
-# Pundit's after_action :verify_authorized
-TurboForm.before_render = ->(resource) { skip_authorization }
-
-# Action Policy's verify_authorized
-TurboForm.before_render = ->(resource) { skip_verify_authorized! }
+def new
+  @widget = turbo_form_assign(Widget.new)
+end
 ```
 
-Or authorize it for real, if re-rendering a form is something you'd rather gate.
-Name the query explicitly: the endpoint's action is `update`, which is not the
-permission you mean.
+`turbo_form_assign` returns the object, assigns only on a reload, and takes
+`scope:` when the form's scope isn't the object's param key. The form assigns
+the same values again when it renders, which changes nothing.
 
-```ruby
-# Pundit
-TurboForm.before_render = ->(resource) { authorize resource, :edit? }
+### After a failed save
 
-# Action Policy
-TurboForm.before_render = ->(resource) { authorize! resource, to: :edit? }
-
-# CanCanCan -- this also satisfies `check_authorization`, which has no runtime skip
-TurboForm.before_render = ->(resource) { authorize! :edit, resource }
-```
-
-Raising works the way it does in any `before_action`: your
-`rescue_from`s catch it, since the endpoint inherits them too. Rendering or
-redirecting halts the chain as usual.
+Rendering `:new` or `:edit` with `422` after a failed save leaves the browser on
+the form's own URL, since Turbo renders it without touching history — so a
+trigger reloads the right page. The reload builds a fresh object that has not
+been validated, so the error messages go away.
 
 ## JavaScript
 
@@ -238,7 +157,7 @@ To do it by hand, write that file yourself and run `rails stimulus:manifest:upda
 
 ### Testing against it
 
-A re-render is a round trip, so the line after a trigger is racing it. Wrap the
+A reload is a round trip, so the line after a trigger is racing it. Wrap the
 trigger and the wait comes with it:
 
 ```ruby
@@ -247,16 +166,25 @@ select "Barrel Aged", from: "Flavor"
 ```
 
 `expect_dynamic_form_request` is available in system tests with nothing to
-require or include — Minitest and RSpec both. It waits on the controller's
-count of completed round trips rather than on the fields that came back, so it
-doesn't care what the response changed. Scope it with Capybara's `within` when
-a page carries more than one dynamic form.
+require or include — Minitest and RSpec both. It waits on a count of
+completed reloads kept on `<html>` rather than on the fields that came back, so
+it doesn't care what the reload changed.
 
 ## What this deliberately doesn't do
 
-It handles the common case well and gets out of the way otherwise. There is no
-debouncing, no request cancellation and no loading state. When you need those, write the action by hand — that path is still open,
-and this gem doesn't stand in front of it.
+It handles the common case well and gets out of the way otherwise.
+
+- **No debouncing, request cancellation or loading state.** Write the action by
+  hand when you need those — that path is still open.
+- **The form rides in the URL.** Very large forms can hit URL length limits,
+  file inputs are left out, and what was typed lands in browser history and any
+  access log outside Rails' own parameter filtering.
+- **Only the primary database is rolled back**, and only writes: jobs enqueued
+  or mail sent during a reload still happen. A streamed response renders after
+  the transaction has closed.
+- **An STI edit form doesn't change class.** Assigning `type` to a saved record
+  changes the column, not the Ruby class the form asks.
+- **A form with Turbo turned off** reloads whatever URL a failed save left it on.
 
 ## License
 
