@@ -30,13 +30,14 @@ export default class extends Controller {
     countVisit()
   }
 
-  // Turbo's own targeting: the form's data-turbo-frame, where "_top" means the
-  // page, and otherwise the frame the form sits in.
+  // Turbo's own targeting: the form's data-turbo-frame, then the target of the
+  // frame it sits in, then that frame itself. "_top" means the page.
   get #frame() {
-    const id = this.element.dataset.turboFrame
+    const enclosing = this.element.closest("turbo-frame")
+    const id = this.element.dataset.turboFrame || enclosing?.getAttribute("target")
     if (id === "_top") return null
 
-    return id ? document.getElementById(id) : this.element.closest("turbo-frame")
+    return id ? document.getElementById(id) : enclosing
   }
 }
 

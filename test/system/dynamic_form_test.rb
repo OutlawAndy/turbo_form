@@ -43,6 +43,17 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_selector "h1", text: "New widget"
   end
 
+  test "a trigger inside a frame that targets the page reloads the page" do
+    visit new_widget_path
+    page.driver.set_cookie("framed", "1")
+    page.driver.set_cookie("frame_target", "_top")
+    visit new_widget_path
+
+    expect_dynamic_form_request { select "fruit", from: "Category" }
+
+    assert_selector "h1", text: "New fruit widget"
+  end
+
   test "the form and its frame are busy while the trigger's request is out" do
     visit new_widget_path
     page.driver.set_cookie("framed", "1")

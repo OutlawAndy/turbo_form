@@ -2,7 +2,7 @@
 
 <%# A cookie rather than a param, since the form reloads a URL of its own %>
 <% if cookies[:framed] %>
-  <%= turbo_frame_tag("widget_form") { render "form" } %>
+  <%= turbo_frame_tag("widget_form", target: cookies[:frame_target]) { render "form" } %>
 <% else %>
   <%= render "form" %>
 <% end %>
