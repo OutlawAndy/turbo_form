@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+- **Breaking:** a trigger PATCHes its form to the page it is on, where a shadow
+  action runs that page's own `new` or `edit`, assigns `<resource>_params` to
+  `@<resource>` and renders the page's own template, inside a transaction that
+  is always rolled back. Include `TurboForm::Controller` in ApplicationController,
+  declare `concern :dynamic_form, TurboForm::Routes` and draw it on each resource
+  with a dynamic form; `rails generate turbo_form:install` does the first two.
+  Because the controller assigns before anything renders, the whole page sees
+  what was typed, and only what the params method permits is assigned.
+- **Breaking:** `turbo_form_assign`, the `X-Turbo-Form` header and its rollback
+  middleware are gone, and the form builder no longer assigns. Drop
+  `turbo_form_assign(...)` calls and keep the object they wrapped.
+- The form travels in the request body rather than the URL, so large forms, file
+  inputs and browser history are no longer a concern.
+- A form inside a Turbo Frame asks for, and morphs, only that frame, and marks
+  the form and frame busy while its request is out.
+
+## 0.5.0
+
+- **Breaking:** a trigger reloads its own page with the form's state in the
+  query string, and the form assigns that state to its object before its fields
+  render. The endpoint, its route, the signature, `dynamic_form` templates,
+  `TurboForm.before_render` and the trigger's `url:`/`params:` are gone.
+- `turbo_form_assign(object)` assigns in the controller, for state needed above
+  the form.
+- A reload carries an `X-Turbo-Form` header and runs in a transaction that is
+  always rolled back; a request without the header assigns nothing.
+
+## 0.4.0
+
 - The endpoint rebuilds the form's own object instead of a blank one. An edit
   form's record is found again by id, so nested records posted with ids no
   longer raise `RecordNotFound`; a new form keeps the attributes it was built

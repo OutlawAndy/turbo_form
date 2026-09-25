@@ -2,10 +2,11 @@ require "rails/generators"
 
 module TurboForm
   module Generators
-    # There is nothing to install on importmap-rails: the engine pins its own
-    # Stimulus controller and a stock `app/javascript/controllers/index.js`
-    # registers it. Bundled apps get no such sweep, so this hands them the two
-    # things they'd otherwise write by hand -- the package and the registration.
+    # Every app gets the shadow action and the route concern its resources opt
+    # into. The JavaScript is only for bundled apps: on importmap-rails the
+    # engine pins its own Stimulus controller and a stock
+    # `app/javascript/controllers/index.js` registers it. Bundled apps get no
+    # such sweep, so this hands them the package and the registration.
     class InstallGenerator < Rails::Generators::Base
       source_root File.expand_path("templates", __dir__)
 
@@ -15,8 +16,11 @@ module TurboForm
       }.freeze
 
       def install
+        include_controller
+        declare_route_concern
+
         if importmap?
-          say "turbo_form registers its own Stimulus controller on importmap-rails. Nothing to install."
+          say "turbo_form registers its own Stimulus controller on importmap-rails. No JavaScript to install."
           return
         end
 
@@ -26,6 +30,16 @@ module TurboForm
       end
 
       private
+        def include_controller
+          inject_into_class "app/controllers/application_controller.rb", "ApplicationController", "  include TurboForm::Controller\n"
+        end
+
+        # Declared once, drawn on no resource: which forms are dynamic is the
+        # app's call, one `concerns: :dynamic_form` at a time.
+        def declare_route_concern
+          route "concern :dynamic_form, TurboForm::Routes"
+        end
+
         def importmap? = Rails.root.join("config/importmap.rb").exist?
 
         def install_package

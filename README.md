@@ -30,7 +30,14 @@ it always had.
 gem "turbo_form"
 ```
 
-Mix the action into your ApplicationController:
+Then run the installer:
+
+```bash
+rails generate turbo_form:install
+```
+
+It mixes the action into your ApplicationController and declares the route
+concern:
 
 ```ruby
 class ApplicationController < ActionController::Base
@@ -38,23 +45,22 @@ class ApplicationController < ActionController::Base
 end
 ```
 
-and draw it on each resource with a dynamic form:
-
 ```ruby
 concern :dynamic_form, TurboForm::Routes
+```
 
+Draw the concern on each resource with a dynamic form — the installer leaves
+which ones to you:
+
+```ruby
 resources :widgets, concerns: :dynamic_form
 ```
 
 On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus
-controller registers itself and there is nothing to generate. If your app
-bundles with esbuild, Vite, Bun or webpack:
-
-```bash
-rails generate turbo_form:install
-```
-
-See [JavaScript](#javascript) for what that does and how to do it by hand.
+controller registers itself and that's all. On an app that bundles with esbuild,
+Vite, Bun or webpack, the installer also adds the npm package and registers the
+controller; see [JavaScript](#javascript) for what that does and how to do it by
+hand.
 
 ## The two options
 
@@ -165,7 +171,7 @@ application.register("turbo-form", TurboFormController)
 
 **esbuild, Vite, Bun, webpack** — there is no sweep to pick the controller up,
 so the package has to be installed alongside the gem, at the same version, and
-registered. `rails generate turbo_form:install` does both: it adds the package
+registered. `rails generate turbo_form:install` does both, as well as the Ruby side above: it adds the package
 with whichever manager your lockfile names, and writes
 
 ```js

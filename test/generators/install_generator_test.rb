@@ -46,12 +46,31 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     end
   end
 
-  test "does nothing to an importmap app" do
+  test "mixes the shadow action into ApplicationController and declares the route concern" do
+    in_app do
+      run_generator
+
+      assert_file "app/controllers/application_controller.rb", /class ApplicationController < ActionController::Base\n  include TurboForm::Controller\n/
+      assert_file "config/routes.rb", /draw do\n  concern :dynamic_form, TurboForm::Routes\n/
+    end
+  end
+
+  test "running it twice adds each line once" do
+    in_app do
+      2.times { run_generator }
+
+      assert_file("app/controllers/application_controller.rb") { |controller| assert_equal 1, controller.scan("include TurboForm::Controller").size }
+      assert_file("config/routes.rb") { |routes| assert_equal 1, routes.scan("concern :dynamic_form").size }
+    end
+  end
+
+  test "installs no JavaScript into an importmap app" do
     in_app do
       File.write(File.join(destination_root, "config/importmap.rb"), "")
 
       assert_no_match "turbo_form_controller.js", run_generator
       assert_no_file "app/javascript/controllers/turbo_form_controller.js"
+      assert_file "app/controllers/application_controller.rb", /include TurboForm::Controller/
     end
   end
 
@@ -77,6 +96,9 @@ class InstallGeneratorTest < Rails::Generators::TestCase
       FileUtils.mkdir_p File.join(destination_root, "config")
       FileUtils.mkdir_p File.join(destination_root, "app/javascript/controllers")
       File.write(File.join(destination_root, "app/javascript/controllers/application.js"), "")
+      FileUtils.mkdir_p File.join(destination_root, "app/controllers")
+      File.write(File.join(destination_root, "app/controllers/application_controller.rb"), "class ApplicationController < ActionController::Base\nend\n")
+      File.write(File.join(destination_root, "config/routes.rb"), "Rails.application.routes.draw do\nend\n")
 
       Rails.application.config.root = destination_root
       yield
