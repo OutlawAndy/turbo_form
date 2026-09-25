@@ -4,36 +4,15 @@ class DynamicOptionTest < ActionView::TestCase
   setup { @widget = Widget.new }
 
   test "dynamic: true hands the form to the Stimulus controller" do
-    attributes = form_attributes(form_for(@widget, dynamic: true) { "" })
-
-    assert_equal "turbo-form", attributes["data-controller"]
-    assert_match %r{\A/turbo_form/}, attributes["data-turbo-form-url-value"]
-  end
-
-  test "signs the class and scope the endpoint will need" do
-    signature = signature_in(form_for(@widget, dynamic: true) { "" })
-
-    assert_equal "Widget", signature.model_name
-    assert_equal "widget", signature.scope
-    assert_nil signature.template
-    assert_equal lookup_context.prefixes, signature.prefixes
+    assert_equal "turbo-form", form_attributes(form_for(@widget, dynamic: true) { "" })["data-controller"]
   end
 
   test "form_with is wired the same way, since form_for funnels through it" do
-    attributes = form_attributes(form_with(model: @widget, dynamic: true) { "" })
-
-    assert_equal "turbo-form", attributes["data-controller"]
-    assert_equal "widget", signature_in(form_with(model: @widget, dynamic: true) { "" }).scope
+    assert_equal "turbo-form", form_attributes(form_with(model: @widget, dynamic: true) { "" })["data-controller"]
   end
 
-  test "honours an explicit scope" do
-    form = form_with(model: @widget, scope: :gadget, dynamic: true) { "" }
-
-    assert_equal "gadget", signature_in(form).scope
-  end
-
-  test "a string names the template to render instead of the conventional one" do
-    assert_equal "shared/refresh", signature_in(form_for(@widget, dynamic: "shared/refresh") { "" }).template
+  test "keeps dynamic: out of the form's HTML" do
+    assert_nil form_attributes(form_with(model: @widget, dynamic: true) { "" })["dynamic"]
   end
 
   test "keeps company with the caller's own Stimulus controllers" do
@@ -48,18 +27,55 @@ class DynamicOptionTest < ActionView::TestCase
     assert_equal form_for(@widget) { "" }, form_for(@widget, dynamic: false) { "" }
   end
 
-  test "explains itself when there is no object to rebuild" do
-    error = assert_raises(ArgumentError) { form_with(scope: :search, url: "/search", dynamic: true) { "" } }
+  test "assigns the submitted state to its object before the fields render" do
+    reload!
+    params[:widget] = { category: "fruit", flavor: "banana" }
 
-    assert_match(/model/, error.message)
+    form = form_for(@widget, dynamic: true) { |f| f.select :flavor, @widget.flavors }
+
+    assert_equal %w[apple banana cherry], Nokogiri::HTML5.fragment(form).css("option").map(&:text)
+    assert_equal "banana", @widget.flavor
+  end
+
+  test "honours an explicit scope" do
+    reload!
+    params[:gadget] = { category: "fruit" }
+
+    form_with(model: @widget, scope: :gadget, dynamic: true) { "" }
+
+    assert_equal "fruit", @widget.category
+  end
+
+  test "an ordinary form leaves its object alone" do
+    reload!
+    params[:widget] = { category: "fruit" }
+
+    form_for(@widget) { "" }
+
+    assert_nil @widget.category
+  end
+
+  test "an ordinary visit to the same URL leaves its object alone" do
+    params[:widget] = { category: "fruit" }
+
+    form_for(@widget, dynamic: true) { "" }
+
+    assert_nil @widget.category
+  end
+
+  test "ignores a scope that isn't a hash" do
+    reload!
+    params[:widget] = "fruit"
+
+    form_for(@widget, dynamic: true) { "" }
+
+    assert_nil @widget.category
   end
 
   private
+    def reload! = request.headers[TurboForm::Reload::HEADER] = "reload"
+
     def form_attributes(html)
       Nokogiri::HTML5.fragment(html).at("form").attributes.transform_values(&:value)
-    end
-
-    def signature_in(html)
-      TurboForm::Signature.verify(form_attributes(html)["data-turbo-form-url-value"].split("/").last)
     end
 end

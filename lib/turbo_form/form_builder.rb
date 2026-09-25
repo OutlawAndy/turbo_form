@@ -9,6 +9,15 @@ module TurboForm
   # HTML attributes; the select and date families keep those in a trailing
   # `html_options` instead, which is where these overrides earn their keep.
   module FormBuilder
+    # A dynamic form's trigger reloads the page with the form's current state in
+    # the query string. Assigning it here, before the form's block runs, lets
+    # every field -- and every question the form asks of its object -- answer
+    # as the user now has it.
+    def initialize(object_name, object, template, options)
+      super
+      @object = TurboForm::Reload.assign(object, @template.params[object_name]) if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
+    end
+
     def select(method, choices = nil, options = {}, html_options = {}, &block)
       super(method, choices, *hoist_trigger(options, html_options), &block)
     end
@@ -75,28 +84,14 @@ module TurboForm
         attributes = attributes.except(:dynamic_trigger)
         return attributes unless trigger
 
-        event, url, query = destructure_trigger(trigger)
-
         data = (attributes[:data] || {}).dup
-        data[:action] = [ data[:action], stimulus_action_for(event) ].compact.join(" ")
-        data[:turbo_form_url_param] = url if url
-        data[:turbo_form_query_param] = query if query
+        data[:action] = [ data[:action], stimulus_action_for(trigger) ].compact.join(" ")
         attributes.merge(data: data)
       end
 
-      # The short forms say when to fire and nothing else. The hash form also
-      # says where to send the form and what to send with it, which is what a
-      # field needs when it answers to a different action than its own form does.
-      def destructure_trigger(trigger)
-        return trigger.values_at(:event, :url, :params) if trigger.is_a?(Hash)
-
-        [ trigger, nil, nil ]
-      end
-
-      # `true` -- or a hash that names no event -- leaves the event off the
-      # descriptor so Stimulus binds the element's own default: `change` for a
-      # select, `input` for a text field, `click` for a button. Anything else is
-      # taken as the event name.
+      # `true` leaves the event off the descriptor so Stimulus binds the
+      # element's own default: `change` for a select, `input` for a text field,
+      # `click` for a button. Anything else is taken as the event name.
       def stimulus_action_for(event)
         event.nil? || event == true ? "turbo-form#perform" : "#{event}->turbo-form#perform"
       end
