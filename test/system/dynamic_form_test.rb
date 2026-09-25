@@ -20,4 +20,15 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
 
     assert_select "Flavor", options: %w[carrot pea turnip]
   end
+
+  test "a trigger after a failed save reloads the form it failed on" do
+    visit new_widget_path
+    click_on "Save"
+    assert_text "Flavor can't be blank"
+
+    expect_dynamic_form_request { select "fruit", from: "Category" }
+
+    assert_current_path new_widget_path, ignore_query: true
+    assert_select "Flavor", options: %w[apple banana cherry]
+  end
 end

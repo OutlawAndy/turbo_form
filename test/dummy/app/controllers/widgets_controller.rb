@@ -4,6 +4,12 @@ class WidgetsController < ApplicationController
   end
 
   def create
-    head :created
+    @widget = Widget.new(params.expect(widget: %i[category flavor notes]))
+
+    if @widget.valid?
+      head :created
+    else
+      render :new, status: :unprocessable_content
+    end
   end
 end

@@ -13,6 +13,8 @@ class Widget
   attribute :flavor, :string
   attribute :notes, :string
 
+  validates :flavor, presence: true
+
   def categories = FLAVORS.keys
 
   def flavors = FLAVORS.fetch(category, [])
