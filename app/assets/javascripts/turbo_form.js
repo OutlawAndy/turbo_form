@@ -16,29 +16,43 @@ export default class extends Controller {
 
   async perform() {
     const frame = this.#frame
-    const busy = [ this.element, frame ].filter(Boolean)
+    const submission = { formElement: this.element, location: new URL(this.urlValue, location.href) }
+
+    this.#markBusy(frame)
+    Turbo.navigator.formSubmissionStarted(submission)
+    try {
+      const response = await this.#fetch(frame)
+      const html = await response.text()
+
+      frame ? this.#morph(frame, html) : this.#visit(response.status, html)
+    } finally {
+      this.#clearBusy(frame)
+      Turbo.navigator.formSubmissionFinished(submission)
+    }
+  }
+
+  // Private
+
+  #fetch(frame) {
     const headers = { Accept: "text/html" }
     if (frame) headers["Turbo-Frame"] = frame.id
 
-    const submission = { formElement: this.element, location: new URL(this.urlValue, location.href) }
+    return Turbo.fetch(this.urlValue, { method: "PATCH", body: new FormData(this.element), headers })
+  }
 
-    markAsBusy(busy)
-    Turbo.navigator.formSubmissionStarted(submission)
-    try {
-      const response = await Turbo.fetch(this.urlValue, { method: "PATCH", body: new FormData(this.element), headers })
-      const responseHTML = await response.text()
+  #morph(frame, html) {
+    Turbo.morphTurboFrameElements(frame, new DOMParser().parseFromString(html, "text/html").getElementById(frame.id))
+    this.#countVisit()
+  }
 
-      if (frame) {
-        Turbo.morphTurboFrameElements(frame, new DOMParser().parseFromString(responseHTML, "text/html").getElementById(frame.id))
-        countVisit()
-      } else {
-        document.addEventListener("turbo:load", countVisit, { once: true })
-        Turbo.visit(location.href, { action: "replace", shouldCacheSnapshot: false, refresh: { method: "morph", scroll: "preserve" }, response: { statusCode: response.status, responseHTML } })
-      }
-    } finally {
-      clearBusyState(busy)
-      Turbo.navigator.formSubmissionFinished(submission)
-    }
+  #visit(statusCode, responseHTML) {
+    document.addEventListener("turbo:load", () => this.#countVisit(), { once: true })
+    Turbo.visit(location.href, {
+      action: "replace",
+      shouldCacheSnapshot: false,
+      refresh: { method: "morph", scroll: "preserve" },
+      response: { statusCode, responseHTML }
+    })
   }
 
   // Turbo's own targeting: the form's data-turbo-frame, then the target of the
@@ -50,28 +64,24 @@ export default class extends Controller {
 
     return id ? document.getElementById(id) : enclosing
   }
-}
 
-// Turbo's own busy state for a submission, which it doesn't export: `busy` on a
-// frame, `aria-busy` on everything.
-function markAsBusy(elements) {
-  for (const element of elements) {
-    if (element.localName == "turbo-frame") element.setAttribute("busy", "")
-    element.setAttribute("aria-busy", "true")
+  // Turbo's own busy state for a submission, which it doesn't export: `busy` on
+  // a frame, `aria-busy` on everything.
+  #markBusy(frame) {
+    frame?.setAttribute("busy", "")
+    for (const element of [ this.element, frame ].filter(Boolean)) element.setAttribute("aria-busy", "true")
   }
-}
 
-function clearBusyState(elements) {
-  for (const element of elements) {
-    element.removeAttribute("busy")
-    element.removeAttribute("aria-busy")
+  #clearBusy(frame) {
+    frame?.removeAttribute("busy")
+    for (const element of [ this.element, frame ].filter(Boolean)) element.removeAttribute("aria-busy")
   }
-}
 
-// Kept on <html> because a morph rewrites <body> to what the server sent, and
-// the server never knows the count. Lets a system test wait on a completed
-// reload instead of sleeping.
-function countVisit() {
-  const root = document.documentElement.dataset
-  root.turboFormVisits = Number(root.turboFormVisits || 0) + 1
+  // Kept on <html> because a morph rewrites <body> to what the server sent, and
+  // the server never knows the count. Lets a system test wait on a completed
+  // reload instead of sleeping.
+  #countVisit() {
+    const root = document.documentElement.dataset
+    root.turboFormVisits = Number(root.turboFormVisits || 0) + 1
+  }
 }
