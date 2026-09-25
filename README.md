@@ -14,19 +14,36 @@ instead:
 <% end %>
 ```
 
-Pick a category and the page reloads with the form as it currently stands. The
-form assigns what was typed to `@widget` before its fields render, so
-`@widget.flavors` answers for the category just picked. Turbo morphs the page in
-place, so focus, scroll and everything else typed survive the reload.
+Pick a category and the form is sent to the page it is on. That page's own
+action builds `@widget`, the form's values are assigned to it, and the page's
+own template renders it — so `@widget.flavors` answers for the category just
+picked. Turbo morphs the page in place, so focus, scroll and everything else
+typed survive.
 
-That's the whole feature. No route, no controller action, no template, no
-JavaScript. The page is rendered by its own controller, so its authentication,
-authorization and partials are the ones it always had.
+No new action, no template, no JavaScript to write. The page is rendered by its
+own controller, so its authentication, authorization and partials are the ones
+it always had.
 
 ## Installation
 
 ```ruby
 gem "turbo_form"
+```
+
+Mix the action into your ApplicationController:
+
+```ruby
+class ApplicationController < ActionController::Base
+  include TurboForm::Controller
+end
+```
+
+and draw it on each resource with a dynamic form:
+
+```ruby
+concern :dynamic_form, TurboForm::Routes
+
+resources :widgets, concerns: :dynamic_form
 ```
 
 On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus
@@ -43,9 +60,9 @@ See [JavaScript](#javascript) for what that does and how to do it by hand.
 
 ### `dynamic:` on the form
 
-`dynamic: true` makes the form dynamic: on a reload, it assigns the submitted
-values under its scope to its object, via `assign_attributes`, before any field
-renders.
+`dynamic: true` makes the form dynamic: a trigger sends it to the `new` or `edit`
+page of its model — `edit` once the record is saved — which is where
+`TurboForm::Routes` listens.
 
 ### `dynamic_trigger:` on a field
 
@@ -76,61 +93,61 @@ inherits from, so it works without SimpleForm being involved at all:
   = f.input :category, input_html: { dynamic_trigger: true }
 ```
 
-## What a reload does
+## What a trigger does
 
-A trigger visits the page's own URL with the form's fields in the query string,
-leaving out the authenticity token and `_method`, and marks the request with an
-`X-Turbo-Form` header. On the server:
+A trigger PATCHes the whole form to its own page — `/widgets/new` or
+`/widgets/:id/edit` — which the route concern sends to `dynamic_form`. That
+action:
 
-1. the page's controller runs as it would for any visit, building `@widget` the
-   way it always does — found by id, built from a parent, whatever it does,
-2. the form assigns the submitted values to that object as it starts to render,
-3. the whole request runs inside a database transaction that is always rolled
-   back.
+1. runs the page's own action (`new` or `edit`), building `@widget` the way it
+   always does — found by id, built from a parent, whatever it does,
+2. assigns `widget_params` to it,
+3. renders the page's own template,
 
-Only a request carrying the header is assigned anything. A plain link can't set
-a header, and another origin can't without a CORS preflight, so a hand-crafted
-URL with form values in it renders the page as if they weren't there.
+all inside a database transaction that is always rolled back.
+
+Because the values are assigned in the controller, before anything renders, the
+whole page sees what was typed — the layout, the template above the form, and
+the form itself.
 
 The rollback is there because Active Record saves some assignments on the spot
-(`has_many` writers, `*_ids=`). A reload exists to render, so nothing it does is
+(`has_many` writers, `*_ids=`). A trigger exists to render, so nothing it does is
 kept — including anything else the action writes.
 
-### Needing the values before the form
+### The conventions it leans on
 
-The form assigns as it starts to render, so everything from the form down — and
-the layout, which Rails renders after the template — sees what was typed. The
-controller, and anything in the template above the form, sees the object as it
-was built. When those need it too, assign in the action:
+`dynamic_form` knows nothing about your resource beyond its controller's name.
+For a `WidgetsController`:
 
-```ruby
-def new
-  @widget = turbo_form_assign(Widget.new)
-end
-```
-
-`turbo_form_assign` returns the object, assigns only on a reload, and takes
-`scope:` when the form's scope isn't the object's param key. The form assigns
-the same values again when it renders, which changes nothing.
+- `new` and `edit` set `@widget`,
+- `widget_params` permits the form's fields — the same method `create` and
+  `update` already use, so a trigger assigns nothing a save wouldn't,
+- `new` and `edit` leave rendering to Rails. One that calls `render` or
+  `redirect_to` itself raises `AbstractController::DoubleRenderError`.
 
 ### Switching an STI subclass
 
-When the submitted values include the inheritance column, the form switches its
-object to the subclass it names, with `becomes`, before assigning — so a `type`
-select can turn a `Gizmo` into a `Doohickey` and the rest of the form answers
-as one. Give the form its base class's scope (`scope: :gadget`) so the switched
-object reads and posts under the same name.
+When the submitted values include the inheritance column, the object is switched
+to the subclass it names, with `becomes`, before assigning — so a `type` select
+can turn a `Gizmo` into a `Doohickey` and the rest of the page answers as one.
+Give the form its base class's scope (`scope: :gadget`) so the switched object
+reads and posts under the same name, and permit `type` in the params method.
 
-The switched object shares its attributes with the original, so everything
-outside the form sees the same values. To have it be the new subclass too, keep
-what `turbo_form_assign` returns — it switches the same way.
+### Inside a Turbo Frame
+
+A form inside a `<turbo-frame>`, or one naming a frame with
+`data-turbo-frame`, asks for that frame alone: the request carries the
+`Turbo-Frame` header, turbo-rails renders without the layout, and only the frame
+is morphed. `data-turbo-frame="_top"` means the whole page, as it does for
+Turbo. While the request is out, the form and its frame are `aria-busy`, and the
+frame `busy`, the way Turbo marks a submission.
 
 ### After a failed save
 
-Rendering `:new` or `:edit` with `422` after a failed save leaves the browser on
-the form's own URL, since Turbo renders it without touching history — so a
-trigger reloads the right page. The reload builds a fresh object that has not
-been validated, so the error messages go away.
+A trigger sends the form to its model's `new` or `edit` page, not to whatever
+URL the browser is on, so a trigger after rendering `:new` from a failed
+`create` still reaches the right action. The object it builds is fresh and has
+not been validated, so the error messages go away.
 
 ## JavaScript
 
@@ -169,7 +186,7 @@ To do it by hand, write that file yourself and run `rails stimulus:manifest:upda
 
 ### Testing against it
 
-A reload is a round trip, so the line after a trigger is racing it. Wrap the
+A trigger is a round trip, so the line after it is racing it. Wrap the
 trigger and the wait comes with it:
 
 ```ruby
@@ -179,22 +196,23 @@ select "Barrel Aged", from: "Flavor"
 
 `expect_dynamic_form_request` is available in system tests with nothing to
 require or include — Minitest and RSpec both. It waits on a count of
-completed reloads kept on `<html>` rather than on the fields that came back, so
-it doesn't care what the reload changed.
+completed triggers kept on `<html>` rather than on the fields that came back, so
+it doesn't care what the trigger changed.
 
 ## What this deliberately doesn't do
 
 It handles the common case well and gets out of the way otherwise.
 
-- **No debouncing, request cancellation or loading state.** Write the action by
-  hand when you need those — that path is still open.
-- **The form rides in the URL.** Very large forms can hit URL length limits,
-  file inputs are left out, and what was typed lands in browser history and any
-  access log outside Rails' own parameter filtering.
+- **No debouncing, request cancellation or loading state** beyond `aria-busy`.
+  Write the action by hand when you need those — that path is still open.
+- **Resourceful pages only.** The form's URL comes from its model, so a page
+  whose `new` or `edit` isn't the model's own route has nowhere to send it.
+- **Not a Turbo form submission.** Turbo renders a form's response only when it
+  redirects or fails, so the trigger fetches and morphs itself: no
+  `turbo:submit-start`/`turbo:submit-end` or `turbo:before-fetch-request`
+  events, no progress bar, and a frame's own `target="_top"` isn't followed.
 - **Only the primary database is rolled back**, and only writes: jobs enqueued
-  or mail sent during a reload still happen. A streamed response renders after
-  the transaction has closed.
-- **A form with Turbo turned off** reloads whatever URL a failed save left it on.
+  or mail sent during a trigger still happen.
 
 ## License
 
