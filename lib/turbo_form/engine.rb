@@ -51,6 +51,7 @@ module TurboForm
 
     initializer "turbo_form.reload" do |app|
       app.middleware.use TurboForm::Reload::Middleware
+      ActiveSupport.on_load(:action_controller_base) { include TurboForm::Reload::Controller }
     end
 
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that

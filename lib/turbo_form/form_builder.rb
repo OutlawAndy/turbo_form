@@ -15,7 +15,7 @@ module TurboForm
     # as the user now has it.
     def initialize(object_name, object, template, options)
       super
-      assign_submitted_attributes if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
+      TurboForm::Reload.assign(object, @template.params[object_name]) if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
     end
 
     def select(method, choices = nil, options = {}, html_options = {}, &block)
@@ -59,11 +59,6 @@ module TurboForm
     end
 
     private
-      def assign_submitted_attributes
-        submitted = @template.params[object_name]
-        object.assign_attributes(submitted.permit!) if submitted.is_a?(ActionController::Parameters)
-      end
-
       # Every other field helper -- generated and hand-written alike -- passes its
       # attributes through here on the way to the tag.
       def objectify_options(options)

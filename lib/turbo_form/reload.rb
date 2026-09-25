@@ -9,6 +9,25 @@ module TurboForm
 
     def self.requested?(request) = request&.headers&.key?(HEADER) || false
 
+    def self.assign(object, submitted)
+      object.assign_attributes(submitted.permit!) if submitted.is_a?(ActionController::Parameters)
+    end
+
+    # Included into ActionController::Base, for an action that needs the form's
+    # state before the form itself is rendered:
+    #
+    #   @widget = turbo_form_assign(Widget.new)
+    #
+    # The form assigns the same state again when it renders, which changes
+    # nothing.
+    module Controller
+      private
+        def turbo_form_assign(object, scope: object.model_name.param_key)
+          TurboForm::Reload.assign(object, params[scope]) if TurboForm::Reload.requested?(request)
+          object
+        end
+    end
+
     # Assigning to a saved record is not always inert -- Active Record saves
     # `has_many` writers and `*_ids=` on the spot -- and a reload exists only to
     # render, so nothing it does is kept.

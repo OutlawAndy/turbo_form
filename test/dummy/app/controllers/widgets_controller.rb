@@ -1,6 +1,6 @@
 class WidgetsController < ApplicationController
   def new
-    @widget = Widget.new
+    @widget = turbo_form_assign(Widget.new)
   end
 
   def create
