@@ -7,7 +7,7 @@ module TurboForm
   module Reload
     HEADER = "X-Turbo-Form"
 
-    def self.requested?(request) = request&.headers&.key?(HEADER) || false
+    def self.requested?(request) = request&.headers&.key?(HEADER)
 
     def self.assign(object, submitted)
       object.assign_attributes(submitted.permit!) if submitted.is_a?(ActionController::Parameters)
