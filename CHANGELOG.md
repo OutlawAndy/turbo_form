@@ -6,7 +6,7 @@
   action runs that page's own `new` or `edit`, assigns `<resource>_params` to
   `@<resource>` and renders the page's own template, inside a transaction that
   is always rolled back. Include `TurboForm::Controller` in ApplicationController,
-  declare `concern :dynamic_form, TurboForm::Routes` and draw it on each resource
+  declare `concern :turbo_form, TurboForm::Routes` and draw it on each resource
   with a dynamic form; `rails generate turbo_form:install` does the first two.
   Because the controller assigns before anything renders, the whole page sees
   what was typed, and only what the params method permits is assigned.

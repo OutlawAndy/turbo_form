@@ -35,9 +35,9 @@ module TurboForm
         end
 
         # Declared once, drawn on no resource: which forms are dynamic is the
-        # app's call, one `concerns: :dynamic_form` at a time.
+        # app's call, one `concerns: :turbo_form` at a time.
         def declare_route_concern
-          route "concern :dynamic_form, TurboForm::Routes"
+          route "concern :turbo_form, TurboForm::Routes"
         end
 
         def importmap? = Rails.root.join("config/importmap.rb").exist?

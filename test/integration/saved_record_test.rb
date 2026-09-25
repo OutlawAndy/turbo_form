@@ -34,8 +34,8 @@ class SavedRecordTest < ActionDispatch::IntegrationTest
     def with_gadget_routes(&)
       with_routing do |routes|
         routes.draw do
-          concern :dynamic_form, TurboForm::Routes
-          resources :gadgets, only: :edit, concerns: :dynamic_form
+          concern :turbo_form, TurboForm::Routes
+          resources :gadgets, only: :edit, concerns: :turbo_form
         end
         yield
       end

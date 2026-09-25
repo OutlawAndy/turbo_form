@@ -3,8 +3,8 @@ module TurboForm
   # at the same paths, onto the one shadow action that renders them from what
   # the form currently holds.
   #
-  #   concern :dynamic_form, TurboForm::Routes
-  #   resources :widgets, concerns: :dynamic_form
+  #   concern :turbo_form, TurboForm::Routes
+  #   resources :widgets, concerns: :turbo_form
   module Routes
     def self.call(mapper, _options = {})
       mapper.patch :new, on: :collection, path: "new", action: :dynamic_form, as: nil, defaults: { turbo_form: "new" }

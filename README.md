@@ -46,14 +46,14 @@ end
 ```
 
 ```ruby
-concern :dynamic_form, TurboForm::Routes
+concern :turbo_form, TurboForm::Routes
 ```
 
 Draw the concern on each resource with a dynamic form — the installer leaves
 which ones to you:
 
 ```ruby
-resources :widgets, concerns: :dynamic_form
+resources :widgets, concerns: :turbo_form
 ```
 
 On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus

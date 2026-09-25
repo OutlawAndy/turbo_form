@@ -51,7 +51,7 @@ class InstallGeneratorTest < Rails::Generators::TestCase
       run_generator
 
       assert_file "app/controllers/application_controller.rb", /class ApplicationController < ActionController::Base\n  include TurboForm::Controller\n/
-      assert_file "config/routes.rb", /draw do\n  concern :dynamic_form, TurboForm::Routes\n/
+      assert_file "config/routes.rb", /draw do\n  concern :turbo_form, TurboForm::Routes\n/
     end
   end
 
@@ -60,7 +60,7 @@ class InstallGeneratorTest < Rails::Generators::TestCase
       2.times { run_generator }
 
       assert_file("app/controllers/application_controller.rb") { |controller| assert_equal 1, controller.scan("include TurboForm::Controller").size }
-      assert_file("config/routes.rb") { |routes| assert_equal 1, routes.scan("concern :dynamic_form").size }
+      assert_file("config/routes.rb") { |routes| assert_equal 1, routes.scan("concern :turbo_form").size }
     end
   end
 
