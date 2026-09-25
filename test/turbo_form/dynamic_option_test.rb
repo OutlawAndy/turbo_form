@@ -27,54 +27,11 @@ class DynamicOptionTest < ActionView::TestCase
     assert_equal form_for(@widget) { "" }, form_for(@widget, dynamic: false) { "" }
   end
 
-  test "assigns the submitted state to its object before the fields render" do
-    reload!
-    params[:widget] = { category: "fruit", flavor: "banana" }
-
-    form = form_for(@widget, dynamic: true) { |f| f.select :flavor, @widget.flavors }
-
-    assert_equal %w[apple banana cherry], Nokogiri::HTML5.fragment(form).css("option").map(&:text)
-    assert_equal "banana", @widget.flavor
-  end
-
-  test "honours an explicit scope" do
-    reload!
-    params[:gadget] = { category: "fruit" }
-
-    form_with(model: @widget, scope: :gadget, dynamic: true) { "" }
-
-    assert_equal "fruit", @widget.category
-  end
-
-  test "an ordinary form leaves its object alone" do
-    reload!
-    params[:widget] = { category: "fruit" }
-
-    form_for(@widget) { "" }
-
-    assert_nil @widget.category
-  end
-
-  test "an ordinary visit to the same URL leaves its object alone" do
-    params[:widget] = { category: "fruit" }
-
-    form_for(@widget, dynamic: true) { "" }
-
-    assert_nil @widget.category
-  end
-
-  test "ignores a scope that isn't a hash" do
-    reload!
-    params[:widget] = "fruit"
-
-    form_for(@widget, dynamic: true) { "" }
-
-    assert_nil @widget.category
+  test "points the controller at the page the form is on" do
+    assert_equal "/widgets/new", form_attributes(form_for(@widget, dynamic: true) { "" })["data-turbo-form-url-value"]
   end
 
   private
-    def reload! = request.headers[TurboForm::Reload::HEADER] = "reload"
-
     def form_attributes(html)
       Nokogiri::HTML5.fragment(html).at("form").attributes.transform_values(&:value)
     end

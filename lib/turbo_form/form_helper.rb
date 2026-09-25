@@ -7,7 +7,7 @@ module TurboForm
     # stays in the options so the builder sees it; Rails slices the form tag's
     # attributes out by name, so it never reaches the HTML.
     def form_with(model: false, scope: nil, url: nil, format: nil, **options, &block)
-      wire_dynamic_form(options) if options[:dynamic]
+      wire_dynamic_form(options, model) if options[:dynamic]
       super
     end
 
@@ -15,11 +15,17 @@ module TurboForm
       # `form_for` funnels HTML attributes through options[:html] while `form_with`
       # takes them at the top level. Write wherever the caller already is, and sit
       # alongside any Stimulus controller they asked for rather than replacing it.
-      def wire_dynamic_form(options)
+      def wire_dynamic_form(options, model)
         attributes = options.key?(:html) ? (options[:html] ||= {}) : options
         data = attributes[:data] ||= {}
 
         data[:controller] = [ data[:controller], "turbo-form" ].compact.join(" ")
+        data[:turbo_form_url_value] = namesake_path(model)
+      end
+
+      # The page the form is on, which TurboForm::Routes answers PATCH on too.
+      def namesake_path(model)
+        polymorphic_path(model, action: Array(model).last.persisted? ? :edit : :new)
       end
   end
 end
