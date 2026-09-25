@@ -1,5 +1,7 @@
 Rails.application.routes.draw do
-  resources :widgets, only: %i[new create]
+  concern :turbo_form, TurboForm::Routes
+
+  resources :widgets, only: %i[new create], concerns: :turbo_form
 
   get "up" => "rails/health#show", as: :rails_health_check
 end

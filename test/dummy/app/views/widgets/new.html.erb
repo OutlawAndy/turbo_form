@@ -1,20 +1,8 @@
 <h1>New <%= @widget.category %> widget</h1>
 
-<%= form_for @widget, dynamic: true do |f| %>
-  <% @widget.errors.full_messages.each do |message| %>
-    <p class="error"><%= message %></p>
-  <% end %>
-
-  <%= f.label :category %>
-  <%= f.select :category, @widget.categories, { include_blank: true }, dynamic_trigger: true %>
-
-  <div id="flavor-field">
-    <%= f.label :flavor %>
-    <%= f.select :flavor, @widget.flavors %>
-  </div>
-
-  <%= f.label :notes %>
-  <%= f.text_field :notes %>
-
-  <%= f.submit "Save" %>
+<%# A cookie rather than a param, since the form reloads a URL of its own %>
+<% if cookies[:framed] %>
+  <%= turbo_frame_tag("widget_form", target: cookies[:frame_target]) { render "form" } %>
+<% else %>
+  <%= render "form" %>
 <% end %>

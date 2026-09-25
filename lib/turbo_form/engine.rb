@@ -1,7 +1,8 @@
 require "turbo-rails"
 require "turbo_form/form_helper"
 require "turbo_form/form_builder"
-require "turbo_form/reload"
+require "turbo_form/routes"
+require "turbo_form/controller"
 
 module TurboForm
   class Engine < ::Rails::Engine
@@ -47,11 +48,6 @@ module TurboForm
       RSpec.configure do |config|
         config.include TurboForm::SystemTestHelper, type: :system
       end
-    end
-
-    initializer "turbo_form.reload" do |app|
-      app.middleware.use TurboForm::Reload::Middleware
-      ActiveSupport.on_load(:action_controller_base) { include TurboForm::Reload::Controller }
     end
 
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that

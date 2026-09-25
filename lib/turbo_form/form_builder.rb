@@ -9,15 +9,6 @@ module TurboForm
   # HTML attributes; the select and date families keep those in a trailing
   # `html_options` instead, which is where these overrides earn their keep.
   module FormBuilder
-    # A dynamic form's trigger reloads the page with the form's current state in
-    # the query string. Assigning it here, before the form's block runs, lets
-    # every field -- and every question the form asks of its object -- answer
-    # as the user now has it.
-    def initialize(object_name, object, template, options)
-      super
-      @object = TurboForm::Reload.assign(object, @template.params[object_name]) if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
-    end
-
     def select(method, choices = nil, options = {}, html_options = {}, &block)
       super(method, choices, *hoist_trigger(options, html_options), &block)
     end

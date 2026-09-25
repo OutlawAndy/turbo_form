@@ -1,10 +1,10 @@
 class WidgetsController < ApplicationController
   def new
-    @widget = turbo_form_assign(Widget.new)
+    @widget = Widget.new
   end
 
   def create
-    @widget = Widget.new(params.expect(widget: %i[category flavor notes]))
+    @widget = Widget.new(widget_params)
 
     if @widget.valid?
       head :created
@@ -12,4 +12,7 @@ class WidgetsController < ApplicationController
       render :new, status: :unprocessable_content
     end
   end
+
+  private
+    def widget_params = params.expect(widget: %i[category flavor notes])
 end
