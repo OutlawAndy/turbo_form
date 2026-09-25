@@ -15,7 +15,7 @@ module TurboForm
     # as the user now has it.
     def initialize(object_name, object, template, options)
       super
-      TurboForm::Reload.assign(object, @template.params[object_name]) if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
+      @object = TurboForm::Reload.assign(object, @template.params[object_name]) if options[:dynamic] && TurboForm::Reload.requested?(@template.try(:request))
     end
 
     def select(method, choices = nil, options = {}, html_options = {}, &block)

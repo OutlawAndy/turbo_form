@@ -113,6 +113,18 @@ end
 `scope:` when the form's scope isn't the object's param key. The form assigns
 the same values again when it renders, which changes nothing.
 
+### Switching an STI subclass
+
+When the submitted values include the inheritance column, the form switches its
+object to the subclass it names, with `becomes`, before assigning — so a `type`
+select can turn a `Gizmo` into a `Doohickey` and the rest of the form answers
+as one. Give the form its base class's scope (`scope: :gadget`) so the switched
+object reads and posts under the same name.
+
+The switched object shares its attributes with the original, so everything
+outside the form sees the same values. To have it be the new subclass too, keep
+what `turbo_form_assign` returns — it switches the same way.
+
 ### After a failed save
 
 Rendering `:new` or `:edit` with `422` after a failed save leaves the browser on
@@ -182,8 +194,6 @@ It handles the common case well and gets out of the way otherwise.
 - **Only the primary database is rolled back**, and only writes: jobs enqueued
   or mail sent during a reload still happen. A streamed response renders after
   the transaction has closed.
-- **An STI edit form doesn't change class.** Assigning `type` to a saved record
-  changes the column, not the Ruby class the form asks.
 - **A form with Turbo turned off** reloads whatever URL a failed save left it on.
 
 ## License
