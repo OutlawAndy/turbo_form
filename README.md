@@ -56,11 +56,9 @@ which ones to you:
 resources :widgets, concerns: :turbo_form
 ```
 
-On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus
-controller registers itself and that's all. On an app that bundles with esbuild,
-Vite, Bun or webpack, the installer also adds the npm package and registers the
-controller; see [JavaScript](#javascript) for what that does and how to do it by
-hand.
+It also imports the script into `app/javascript/application.js`, adding the npm
+package first if your app bundles with esbuild, Vite, Bun or webpack; see
+[JavaScript](#javascript) for doing that by hand.
 
 ## The two options
 
@@ -77,10 +75,11 @@ page of its model — `edit` once the record is saved — which is where
 <%= f.text_field :name, dynamic_trigger: :blur %>      <%# on a named event %>
 ```
 
-`true` lets Stimulus pick the element's natural event: `change` for a select or
-checkbox, `input` for a text field, `click` for a button. Name an event when you
-want something else — `:blur` on text fields is usually what you want, since the
-default fires on every keystroke.
+`true` picks the element's natural event: `change` for a select, `click` for a
+submit button, `input` for everything else. Name an event when you want
+something else — `:blur` on text fields is usually what you want, since the
+default fires on every keystroke. A named event is one of `:input`, `:change`,
+`:blur` or `:click`.
 
 Works on every Rails field helper, including the select and date families where
 Rails keeps HTML attributes in a separate hash:
@@ -157,38 +156,26 @@ not been validated, so the error messages go away.
 
 ## JavaScript
 
-**importmap-rails** — nothing to do. The engine pins its controller as
-`controllers/turbo_form_controller`, which the `eagerLoadControllersFrom` /
-`lazyLoadControllersFrom` in a stock `app/javascript/controllers/index.js`
-registers as `turbo-form` on its own.
-
-If you hand-wrote that file, register it yourself:
+There is no Stimulus controller to register. The script listens on the document
+for triggers, so it only has to be imported once:
 
 ```js
-import TurboFormController from "controllers/turbo_form_controller"
-application.register("turbo-form", TurboFormController)
+// app/javascript/application.js
+import "turbo_form"             // importmap-rails: the engine pins it
+import "@rolemodel/turbo-form"  // esbuild, Vite, Bun, webpack
 ```
 
-**esbuild, Vite, Bun, webpack** — there is no sweep to pick the controller up,
-so the package has to be installed alongside the gem, at the same version, and
-registered. `rails generate turbo_form:install` does both, as well as the Ruby side above: it adds the package
-with whichever manager your lockfile names, and writes
+Bundled apps install the npm package alongside the gem, at the same version.
+`rails generate turbo_form:install` does that with whichever package manager
+your lockfile names, and adds the import.
+
+To send a form from your own code, import `refresh`:
 
 ```js
-// app/javascript/controllers/turbo_form_controller.js
-import TurboFormController from "@rolemodel/turbo-form"
+import { refresh } from "turbo_form"
 
-export default TurboFormController
+refresh(document.querySelector("form[data-turbo-form-url]"))
 ```
-
-Registering by *filename* rather than by appending to
-`app/javascript/controllers/index.js` is deliberate. That file is regenerated
-from the contents of the directory every time `rails generate stimulus` runs, so
-a registration appended to it lasts until the next controller you generate. A
-file named `turbo_form_controller.js` is picked up by that same regeneration and
-registered as `turbo-form`, every time.
-
-To do it by hand, write that file yourself and run `rails stimulus:manifest:update`.
 
 ### Testing against it
 

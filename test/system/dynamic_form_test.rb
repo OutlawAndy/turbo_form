@@ -21,6 +21,17 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_equal "morph", evaluate_script("window.renderMethod")
   end
 
+  test "a trigger naming an event that doesn't bubble still fires on it" do
+    visit new_widget_path
+    execute_script %(document.getElementById("widget_notes").dataset.turboFormTrigger = "blur")
+    fill_in "Notes", with: "kept"
+
+    # Dispatched by hand because Cuprite's own blur bubbles, and a browser's doesn't.
+    expect_dynamic_form_request { execute_script %(document.getElementById("widget_notes").dispatchEvent(new FocusEvent("blur"))) }
+
+    assert_field "Notes", with: "kept"
+  end
+
   test "a second trigger reloads again" do
     visit new_widget_path
 

@@ -1,4 +1,3 @@
-import { Controller } from "@hotwired/stimulus"
 import { Turbo } from "@hotwired/turbo-rails"
 
 // PATCHes the form, as it stands, to the page it is on. The shadow action runs
@@ -11,77 +10,95 @@ import { Turbo } from "@hotwired/turbo-rails"
 // handed the response, so its events, error page and progress bar all apply. A
 // frame is morphed directly, since Turbo's frame loading wants its own
 // unexported response object.
-export default class extends Controller {
-  static values = { url: String }
+export async function refresh(form) {
+  const url = form.dataset.turboFormUrl
+  const frame = frameFor(form)
+  const busy = [ form, frame ].filter(Boolean)
+  const submission = { formElement: form, location: new URL(url, location.href) }
 
-  async perform() {
-    const frame = this.#frame
-    const submission = { formElement: this.element, location: new URL(this.urlValue, location.href) }
+  markBusy(busy, frame)
+  Turbo.navigator.formSubmissionStarted(submission)
+  try {
+    const response = await Turbo.fetch(url, { method: "PATCH", body: new FormData(form), headers: headersFor(frame) })
+    const html = await response.text()
 
-    this.#markBusy(frame)
-    Turbo.navigator.formSubmissionStarted(submission)
-    try {
-      const response = await this.#fetch(frame)
-      const html = await response.text()
-
-      frame ? this.#morph(frame, html) : this.#visit(response.status, html)
-    } finally {
-      this.#clearBusy(frame)
-      Turbo.navigator.formSubmissionFinished(submission)
-    }
+    frame ? morph(frame, html) : visit(response.status, html)
+  } finally {
+    clearBusy(busy, frame)
+    Turbo.navigator.formSubmissionFinished(submission)
   }
+}
 
-  // Private
+// One listener per event a trigger can name, on the document and in the
+// capture phase, so fields rendered later are covered and events that don't
+// bubble, like blur, still arrive.
+const TRIGGER_EVENTS = [ "input", "change", "blur", "click" ]
 
-  #fetch(frame) {
-    const headers = { Accept: "text/html" }
-    if (frame) headers["Turbo-Frame"] = frame.id
+for (const type of TRIGGER_EVENTS) {
+  document.addEventListener(type, ({ target }) => {
+    const trigger = target.closest?.("[data-turbo-form-trigger]")
+    if (trigger?.form?.dataset.turboFormUrl && eventFor(trigger) == type) refresh(trigger.form)
+  }, true)
+}
 
-    return Turbo.fetch(this.urlValue, { method: "PATCH", body: new FormData(this.element), headers })
-  }
+// A trigger with no event named fires on its element's natural one.
+function eventFor(trigger) {
+  const named = trigger.dataset.turboFormTrigger
+  if (named) return named
+  if (trigger.localName == "select") return "change"
+  if (trigger.type == "submit") return "click"
 
-  #morph(frame, html) {
-    Turbo.morphTurboFrameElements(frame, new DOMParser().parseFromString(html, "text/html").getElementById(frame.id))
-    this.#countVisit()
-  }
+  return "input"
+}
 
-  #visit(statusCode, responseHTML) {
-    document.addEventListener("turbo:load", () => this.#countVisit(), { once: true })
-    Turbo.visit(location.href, {
-      action: "replace",
-      shouldCacheSnapshot: false,
-      refresh: { method: "morph", scroll: "preserve" },
-      response: { statusCode, responseHTML }
-    })
-  }
+function headersFor(frame) {
+  const headers = { Accept: "text/html" }
+  if (frame) headers["Turbo-Frame"] = frame.id
 
-  // Turbo's own targeting: the form's data-turbo-frame, then the target of the
-  // frame it sits in, then that frame itself. "_top" means the page.
-  get #frame() {
-    const enclosing = this.element.closest("turbo-frame")
-    const id = this.element.dataset.turboFrame || enclosing?.getAttribute("target")
-    if (id === "_top") return null
+  return headers
+}
 
-    return id ? document.getElementById(id) : enclosing
-  }
+function morph(frame, html) {
+  Turbo.morphTurboFrameElements(frame, new DOMParser().parseFromString(html, "text/html").getElementById(frame.id))
+  countVisit()
+}
 
-  // Turbo's own busy state for a submission, which it doesn't export: `busy` on
-  // a frame, `aria-busy` on everything.
-  #markBusy(frame) {
-    frame?.setAttribute("busy", "")
-    for (const element of [ this.element, frame ].filter(Boolean)) element.setAttribute("aria-busy", "true")
-  }
+function visit(statusCode, responseHTML) {
+  document.addEventListener("turbo:load", countVisit, { once: true })
+  Turbo.visit(location.href, {
+    action: "replace",
+    shouldCacheSnapshot: false,
+    refresh: { method: "morph", scroll: "preserve" },
+    response: { statusCode, responseHTML }
+  })
+}
 
-  #clearBusy(frame) {
-    frame?.removeAttribute("busy")
-    for (const element of [ this.element, frame ].filter(Boolean)) element.removeAttribute("aria-busy")
-  }
+// Turbo's own targeting: the form's data-turbo-frame, then the target of the
+// frame it sits in, then that frame itself. "_top" means the page.
+function frameFor(form) {
+  const enclosing = form.closest("turbo-frame")
+  const id = form.dataset.turboFrame || enclosing?.getAttribute("target")
+  if (id === "_top") return null
 
-  // Kept on <html> because a morph rewrites <body> to what the server sent, and
-  // the server never knows the count. Lets a system test wait on a completed
-  // reload instead of sleeping.
-  #countVisit() {
-    const root = document.documentElement.dataset
-    root.turboFormVisits = Number(root.turboFormVisits || 0) + 1
-  }
+  return id ? document.getElementById(id) : enclosing
+}
+
+// Turbo's own busy state for a submission, which it doesn't export: `busy` on
+// a frame, `aria-busy` on everything.
+function markBusy(elements, frame) {
+  frame?.setAttribute("busy", "")
+  for (const element of elements) element.setAttribute("aria-busy", "true")
+}
+
+function clearBusy(elements, frame) {
+  frame?.removeAttribute("busy")
+  for (const element of elements) element.removeAttribute("aria-busy")
+}
+
+// Kept on <html> because a morph rewrites <body> to what the server sent, and
+// the server never knows the count. Lets a system test wait on a completed
+// reload instead of sleeping.
+function countVisit() {
+  const root = document.documentElement.dataset
+  root.turboFormVisits = Number(root.turboFormVisits || 0) + 1
 }

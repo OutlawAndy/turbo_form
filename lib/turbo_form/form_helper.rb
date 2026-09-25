@@ -13,14 +13,10 @@ module TurboForm
 
     private
       # `form_for` funnels HTML attributes through options[:html] while `form_with`
-      # takes them at the top level. Write wherever the caller already is, and sit
-      # alongside any Stimulus controller they asked for rather than replacing it.
+      # takes them at the top level. Write wherever the caller already is.
       def wire_dynamic_form(options, model)
         attributes = options.key?(:html) ? (options[:html] ||= {}) : options
-        data = attributes[:data] ||= {}
-
-        data[:controller] = [ data[:controller], "turbo-form" ].compact.join(" ")
-        data[:turbo_form_url_value] = namesake_path(model)
+        (attributes[:data] ||= {})[:turbo_form_url] = namesake_path(model)
       end
 
       # The page the form is on, which TurboForm::Routes answers PATCH on too.

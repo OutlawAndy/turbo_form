@@ -1,7 +1,6 @@
 require "test_helper"
 require "rails/generators/test_case"
 require "generators/turbo_form/install/install_generator"
-require "stimulus/manifest"
 
 class InstallGeneratorTest < Rails::Generators::TestCase
   COMMANDS = []
@@ -21,28 +20,29 @@ class InstallGeneratorTest < Rails::Generators::TestCase
   setup { @original_root = Rails.application.config.root }
   teardown { Rails.application.config.root = @original_root }
 
-  test "registers the controller by filename, where the stimulus manifest will find it" do
+  test "imports the package into a bundled app's entrypoint" do
     in_app do
       run_generator
 
-      assert_file "app/javascript/controllers/turbo_form_controller.js" do |js|
-        assert_match %r{import TurboFormController from "@rolemodel/turbo-form"}, js
-        assert_match "export default TurboFormController", js
-      end
+      assert_file "app/javascript/application.js", %(import "@rolemodel/turbo-form"\n)
     end
   end
 
-  # The whole reason the registration lives in its own file: index.js is
-  # rewritten from this manifest every time `rails generate stimulus` runs, so
-  # anything appended to it by hand would not survive. Asked of the real
-  # Stimulus, with the real filename.
-  test "the stimulus manifest picks the controller back up when it is regenerated" do
+  test "imports the engine's pin into an importmap app, and installs no package" do
     in_app do
+      File.write(File.join(destination_root, "config/importmap.rb"), "")
       run_generator
 
-      manifest = Stimulus::Manifest.generate_from(Rails.root.join("app/javascript/controllers")).join
-      assert_match %r{import TurboFormController from "\./turbo_form_controller"}, manifest
-      assert_match %r{application\.register\("turbo-form", TurboFormController\)}, manifest
+      assert_file "app/javascript/application.js", %(import "turbo_form"\n)
+      assert_empty COMMANDS
+    end
+  end
+
+  test "asks for the import when the app keeps its entrypoint elsewhere" do
+    in_app do
+      File.delete(File.join(destination_root, "app/javascript/application.js"))
+
+      assert_match %(Add import "@rolemodel/turbo-form" to your JavaScript entrypoint.), run_generator
     end
   end
 
@@ -61,16 +61,7 @@ class InstallGeneratorTest < Rails::Generators::TestCase
 
       assert_file("app/controllers/application_controller.rb") { |controller| assert_equal 1, controller.scan("include TurboForm::Controller").size }
       assert_file("config/routes.rb") { |routes| assert_equal 1, routes.scan("concern :turbo_form").size }
-    end
-  end
-
-  test "installs no JavaScript into an importmap app" do
-    in_app do
-      File.write(File.join(destination_root, "config/importmap.rb"), "")
-
-      assert_no_match "turbo_form_controller.js", run_generator
-      assert_no_file "app/javascript/controllers/turbo_form_controller.js"
-      assert_file "app/controllers/application_controller.rb", /include TurboForm::Controller/
+      assert_file("app/javascript/application.js") { |js| assert_equal 1, js.scan("import").size }
     end
   end
 
@@ -94,8 +85,8 @@ class InstallGeneratorTest < Rails::Generators::TestCase
       prepare_destination
       COMMANDS.clear
       FileUtils.mkdir_p File.join(destination_root, "config")
-      FileUtils.mkdir_p File.join(destination_root, "app/javascript/controllers")
-      File.write(File.join(destination_root, "app/javascript/controllers/application.js"), "")
+      FileUtils.mkdir_p File.join(destination_root, "app/javascript")
+      File.write(File.join(destination_root, "app/javascript/application.js"), "")
       FileUtils.mkdir_p File.join(destination_root, "app/controllers")
       File.write(File.join(destination_root, "app/controllers/application_controller.rb"), "class ApplicationController < ActionController::Base\nend\n")
       File.write(File.join(destination_root, "config/routes.rb"), "Rails.application.routes.draw do\nend\n")

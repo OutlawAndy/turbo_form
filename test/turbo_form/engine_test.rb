@@ -1,16 +1,13 @@
 require "test_helper"
 
 class TurboForm::EngineTest < ActiveSupport::TestCase
-  # The pin is keyed `controllers/..._controller` so that the stock
-  # `eagerLoadControllersFrom("controllers", application)` in a Rails app finds
-  # it and registers it as `turbo-form` with no host configuration at all.
   # Asserting on the *rendered* map, not just the drawn pin: importmap-rails
   # drops any pin whose asset it can't resolve, with nothing louder than a
   # warning in the log.
-  test "pins the Stimulus controller into the host's importmap" do
+  test "pins the script into the host's importmap" do
     imports = JSON.parse(Rails.application.importmap.to_json(resolver: ActionController::Base.helpers))["imports"]
 
-    assert_match %r{\A/assets/turbo_form-\h+\.js\z}, imports["controllers/turbo_form_controller"]
+    assert_match %r{\A/assets/turbo_form-\h+\.js\z}, imports["turbo_form"]
   end
 
   test "includes the system test helper in Minitest's system tests" do
