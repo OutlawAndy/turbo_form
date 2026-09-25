@@ -19,7 +19,7 @@ export async function refresh(form) {
   markBusy(busy, frame)
   Turbo.navigator.formSubmissionStarted(submission)
   try {
-    const response = await Turbo.fetch(url, { method: "PATCH", body: new FormData(form), headers: headersFor(frame) })
+    const response = await Turbo.fetch(url, { method: "PATCH", body: new FormData(form), headers: frame ? { Accept: "text/html", "Turbo-Frame": frame.id } : { Accept: "text/html" } })
     const html = await response.text()
 
     frame ? morph(frame, html) : visit(response.status, html)
@@ -31,16 +31,11 @@ export async function refresh(form) {
 
 // One listener per event the page's triggers name, on the document and in the
 // capture phase, so fields rendered later are covered and events that don't
-// bubble, like blur, still arrive. New names are picked up as triggers appear.
-const listening = new Set()
-
+// bubble, like blur, still arrive. New names are picked up as triggers appear;
+// the browser ignores a listener it already has.
 function listenForTriggers() {
   for (const trigger of document.querySelectorAll("[data-turbo-form-trigger]")) {
-    const type = eventFor(trigger)
-    if (listening.has(type)) continue
-
-    listening.add(type)
-    document.addEventListener(type, handleTrigger, true)
+    document.addEventListener(eventFor(trigger), handleTrigger, true)
   }
 }
 
@@ -60,13 +55,6 @@ function eventFor(trigger) {
   if (trigger.type == "submit") return "click"
 
   return "input"
-}
-
-function headersFor(frame) {
-  const headers = { Accept: "text/html" }
-  if (frame) headers["Turbo-Frame"] = frame.id
-
-  return headers
 }
 
 function morph(frame, html) {
