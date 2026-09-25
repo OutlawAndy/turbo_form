@@ -6,8 +6,11 @@ import { Turbo } from "@hotwired/turbo-rails"
 // template, which is morphed in so focus, scroll and everything typed survive.
 // Inside a frame, only the frame is asked for and morphed, as Turbo would.
 //
-// Fetched rather than submitted through Turbo: Turbo renders a form response
-// only if it redirects or fails, and scrolls to the top when it does.
+// Fetched rather than submitted through Turbo, which renders a form response
+// only if it redirects or fails. The page is still rendered by Turbo: a visit
+// handed the response, so its events, error page and progress bar all apply. A
+// frame is morphed directly, since Turbo's frame loading wants its own
+// unexported response object.
 export default class extends Controller {
   static values = { url: String }
 
@@ -17,17 +20,25 @@ export default class extends Controller {
     const headers = { Accept: "text/html" }
     if (frame) headers["Turbo-Frame"] = frame.id
 
+    const submission = { formElement: this.element, location: new URL(this.urlValue, location.href) }
+
     markAsBusy(busy)
+    Turbo.navigator.formSubmissionStarted(submission)
     try {
       const response = await Turbo.fetch(this.urlValue, { method: "PATCH", body: new FormData(this.element), headers })
-      const page = new DOMParser().parseFromString(await response.text(), "text/html")
+      const responseHTML = await response.text()
 
-      if (frame) Turbo.morphTurboFrameElements(frame, page.getElementById(frame.id))
-      else Turbo.morphBodyElements(document.body, page.body)
+      if (frame) {
+        Turbo.morphTurboFrameElements(frame, new DOMParser().parseFromString(responseHTML, "text/html").getElementById(frame.id))
+        countVisit()
+      } else {
+        document.addEventListener("turbo:load", countVisit, { once: true })
+        Turbo.visit(location.href, { action: "replace", shouldCacheSnapshot: false, refresh: { method: "morph", scroll: "preserve" }, response: { statusCode: response.status, responseHTML } })
+      }
     } finally {
       clearBusyState(busy)
+      Turbo.navigator.formSubmissionFinished(submission)
     }
-    countVisit()
   }
 
   // Turbo's own targeting: the form's data-turbo-frame, then the target of the

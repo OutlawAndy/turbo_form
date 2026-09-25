@@ -12,6 +12,15 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_current_path new_widget_path, ignore_query: true
   end
 
+  test "Turbo renders the page by morphing it" do
+    visit new_widget_path
+    execute_script %(addEventListener("turbo:render", ({ detail }) => window.renderMethod = detail.renderMethod))
+
+    expect_dynamic_form_request { select "fruit", from: "Category" }
+
+    assert_equal "morph", evaluate_script("window.renderMethod")
+  end
+
   test "a second trigger reloads again" do
     visit new_widget_path
 
