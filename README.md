@@ -78,8 +78,9 @@ page of its model — `edit` once the record is saved — which is where
 `true` picks the element's natural event: `change` for a select, `click` for a
 submit button, `input` for everything else. Name an event when you want
 something else — `:blur` on text fields is usually what you want, since the
-default fires on every keystroke. A named event is one of `:input`, `:change`,
-`:blur` or `:click`.
+default fires on every keystroke. Any event name works, including custom ones
+dispatched by other Stimulus controllers — `dynamic_trigger: "autocomplete:selected"`
+— as long as the event is dispatched on the field or bubbles up from inside it.
 
 Works on every Rails field helper, including the select and date families where
 Rails keeps HTML attributes in a separate hash:

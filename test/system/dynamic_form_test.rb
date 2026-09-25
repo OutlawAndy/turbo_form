@@ -32,6 +32,16 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_field "Notes", with: "kept"
   end
 
+  test "a trigger added to the page listens for a custom event, like another controller's" do
+    visit new_widget_path
+    execute_script %(document.getElementById("widget_notes").dataset.turboFormTrigger = "autocomplete:selected")
+    fill_in "Notes", with: "kept"
+
+    expect_dynamic_form_request { execute_script %(document.getElementById("widget_notes").dispatchEvent(new CustomEvent("autocomplete:selected", { bubbles: true }))) }
+
+    assert_field "Notes", with: "kept"
+  end
+
   test "a second trigger reloads again" do
     visit new_widget_path
 

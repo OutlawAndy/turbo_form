@@ -29,17 +29,28 @@ export async function refresh(form) {
   }
 }
 
-// One listener per event a trigger can name, on the document and in the
+// One listener per event the page's triggers name, on the document and in the
 // capture phase, so fields rendered later are covered and events that don't
-// bubble, like blur, still arrive.
-const TRIGGER_EVENTS = [ "input", "change", "blur", "click" ]
+// bubble, like blur, still arrive. New names are picked up as triggers appear.
+const listening = new Set()
 
-for (const type of TRIGGER_EVENTS) {
-  document.addEventListener(type, ({ target }) => {
-    const trigger = target.closest?.("[data-turbo-form-trigger]")
-    if (trigger?.form?.dataset.turboFormUrl && eventFor(trigger) == type) refresh(trigger.form)
-  }, true)
+function listenForTriggers() {
+  for (const trigger of document.querySelectorAll("[data-turbo-form-trigger]")) {
+    const type = eventFor(trigger)
+    if (listening.has(type)) continue
+
+    listening.add(type)
+    document.addEventListener(type, handleTrigger, true)
+  }
 }
+
+function handleTrigger({ type, target }) {
+  const trigger = target.closest?.("[data-turbo-form-trigger]")
+  if (trigger?.form?.dataset.turboFormUrl && eventFor(trigger) == type) refresh(trigger.form)
+}
+
+listenForTriggers()
+new MutationObserver(listenForTriggers).observe(document, { subtree: true, childList: true, attributeFilter: [ "data-turbo-form-trigger" ] })
 
 // A trigger with no event named fires on its element's natural one.
 function eventFor(trigger) {
