@@ -29,7 +29,6 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "peerDependencies": {
-    "@hotwired/stimulus": ">=3.0.0",
     "@hotwired/turbo-rails": ">=8.0.0"
   },
   "module": "app/assets/javascripts/turbo_form.js"

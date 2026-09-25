@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- **Breaking:** the Stimulus controller is gone, along with the
+  `@hotwired/stimulus` peer dependency. The script listens on the document
+  instead: `import "turbo_form"` (importmap) or `import "@rolemodel/turbo-form"`
+  (bundled) once in `application.js`, which `rails generate turbo_form:install`
+  now adds. Delete the generated `app/javascript/controllers/turbo_form_controller.js`.
+  Hand-written `data-controller="turbo-form"` and `turbo-form#perform` become
+  `data-turbo-form-url` on the form and `data-turbo-form-trigger` on the field;
+  call `refresh(form)` from your own code in place of the action.
 - **Breaking:** a trigger PATCHes its form to the page it is on, where a shadow
   action runs that page's own `new` or `edit`, assigns `<resource>_params` to
   `@<resource>` and renders the page's own template, inside a transaction that

@@ -4,7 +4,7 @@ module TurboForm
   #   f.text_field :name, dynamic_trigger: true      # re-render on the default event
   #   f.select :category, categories, {}, dynamic_trigger: :blur
   #
-  # `dynamic_trigger:` always has to end up as a `data-action`, but where it
+  # `dynamic_trigger:` always has to end up as a data attribute, but where it
   # *arrives* depends on the helper. Most treat their `options` hash as the tag's
   # HTML attributes; the select and date families keep those in a trailing
   # `html_options` instead, which is where these overrides earn their keep.
@@ -75,16 +75,12 @@ module TurboForm
         attributes = attributes.except(:dynamic_trigger)
         return attributes unless trigger
 
-        data = (attributes[:data] || {}).dup
-        data[:action] = [ data[:action], stimulus_action_for(trigger) ].compact.join(" ")
-        attributes.merge(data: data)
+        attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger) })
       end
 
-      # `true` leaves the event off the descriptor so Stimulus binds the
-      # element's own default: `change` for a select, `input` for a text field,
-      # `click` for a button. Anything else is taken as the event name.
-      def stimulus_action_for(event)
-        event.nil? || event == true ? "turbo-form#perform" : "#{event}->turbo-form#perform"
-      end
+      # Left blank for `true`, which the script reads as the element's own
+      # default: `change` for a select, `input` for a text field, `click` for a
+      # button.
+      def trigger_event(trigger) = trigger == true ? "" : trigger.to_s
   end
 end

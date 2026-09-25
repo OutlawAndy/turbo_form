@@ -1,5 +1,3 @@
-# Keyed as `controllers/..._controller` so the stock
-# `eagerLoadControllersFrom("controllers", application)` in a Rails app finds it
-# and registers it as `turbo-form`, with nothing asked of the host. The asset
-# name is distinct so the host's own app/javascript/controllers can't shadow it.
-pin "controllers/turbo_form_controller", to: "turbo_form.js"
+# Imported once by the host's application.js, which starts its listeners. The
+# asset name is distinct so nothing in the host's app/javascript can shadow it.
+pin "turbo_form", to: "turbo_form.js"

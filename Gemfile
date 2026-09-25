@@ -18,10 +18,6 @@ gem "sqlite3", require: false
 # Exercised by the engine's importmap integration test.
 gem "importmap-rails"
 
-# The install generator leans on Stimulus' own manifest to register its
-# controller, and the generator test proves that a regenerated manifest keeps it.
-gem "stimulus-rails"
-
 # ActionDispatch::SystemTestCase won't load without it, and the system test
 # helper is Capybara's to begin with.
 gem "capybara"
