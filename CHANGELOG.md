@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- A dynamic `new` or `edit` that calls `render` itself, such as
+  `render layout: 'panel'`, now renders what was typed. Only Rails' implicit
+  render used to be assigned to.
+
+## 0.6.0
+
 - **Breaking:** the Stimulus controller is gone, along with the
   `@hotwired/stimulus` peer dependency. The script listens on the document
   instead: `import "turbo_form"` (importmap) or `import "@rolemodel/turbo-form"`

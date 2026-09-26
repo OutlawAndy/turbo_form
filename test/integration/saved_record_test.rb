@@ -6,6 +6,7 @@ class GadgetsController < ApplicationController
 
   def new
     @gadget = Gadget.new
+    render layout: false
   end
 
   def edit
