@@ -2,7 +2,7 @@ require 'rails/generators'
 
 module TurboForm
   module Generators
-    # Every app gets the shadow action, the route concern its resources opt
+    # Every app gets TurboForm::Controller, the route concern its resources opt
     # into and an import of the script. On importmap-rails the engine pins the
     # script itself; bundled apps get the npm package to import instead.
     class InstallGenerator < Rails::Generators::Base
