@@ -5,8 +5,8 @@ class Widget
   include ActiveModel::Attributes
 
   FLAVORS = {
-    "fruit" => %w[apple banana cherry],
-    "vegetable" => %w[carrot pea turnip]
+    'fruit' => %w[apple banana cherry],
+    'vegetable' => %w[carrot pea turnip]
   }.freeze
 
   attribute :category, :string

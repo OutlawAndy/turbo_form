@@ -1,4 +1,4 @@
-require "test_helper"
+require 'test_helper'
 
 class TurboForm::EngineTest < ActiveSupport::TestCase
   # The pin is keyed `controllers/..._controller` so that the stock
@@ -8,13 +8,13 @@ class TurboForm::EngineTest < ActiveSupport::TestCase
   # drops any pin whose asset it can't resolve, with nothing louder than a
   # warning in the log.
   test "pins the Stimulus controller into the host's importmap" do
-    imports = JSON.parse(Rails.application.importmap.to_json(resolver: ActionController::Base.helpers))["imports"]
+    imports = JSON.parse(Rails.application.importmap.to_json(resolver: ActionController::Base.helpers))['imports']
 
-    assert_match %r{\A/assets/turbo_form-\h+\.js\z}, imports["controllers/turbo_form_controller"]
+    assert_match %r{\A/assets/turbo_form-\h+\.js\z}, imports['controllers/turbo_form_controller']
   end
 
   test "includes the system test helper in Minitest's system tests" do
-    require "action_dispatch/system_test_case"
+    require 'action_dispatch/system_test_case'
 
     assert_includes ActionDispatch::SystemTestCase.ancestors, TurboForm::SystemTestHelper
   end
@@ -47,12 +47,12 @@ class TurboForm::EngineTest < ActiveSupport::TestCase
       abort "registered #{RSpec::REGISTERED.inspect}" unless RSpec::REGISTERED == expected
     RUBY
 
-    _out, error, status = Open3.capture3(RbConfig.ruby, "-e", script, chdir: TurboForm::Engine.root.to_s)
+    _out, error, status = Open3.capture3(RbConfig.ruby, '-e', script, chdir: TurboForm::Engine.root.to_s)
 
     assert status.success?, error
   end
 
-  test "boots an app that has no importmap-rails" do
+  test 'boots an app that has no importmap-rails' do
     script = <<~RUBY
       require "rails"
       require "action_controller/railtie"
@@ -67,7 +67,7 @@ class TurboForm::EngineTest < ActiveSupport::TestCase
       BundlerApp.initialize!
     RUBY
 
-    _out, error, status = Open3.capture3(RbConfig.ruby, "-e", script, chdir: TurboForm::Engine.root.to_s)
+    _out, error, status = Open3.capture3(RbConfig.ruby, '-e', script, chdir: TurboForm::Engine.root.to_s)
 
     assert status.success?, error
   end

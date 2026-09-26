@@ -7,8 +7,8 @@ module TurboForm
   #   resources :widgets, concerns: :turbo_form
   module Routes
     def self.call(mapper, _options = {})
-      mapper.patch :new, on: :collection, path: "new", action: :dynamic_form, as: nil, defaults: { dynamic_action: "new" }
-      mapper.patch :edit, on: :member, action: :dynamic_form, as: nil, defaults: { dynamic_action: "edit" }
+      mapper.patch :new, on: :collection, path: 'new', action: :dynamic_form, as: nil, defaults: { dynamic_action: 'new' }
+      mapper.patch :edit, on: :member, action: :dynamic_form, as: nil, defaults: { dynamic_action: 'edit' }
     end
   end
 end

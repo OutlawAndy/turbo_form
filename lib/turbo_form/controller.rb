@@ -19,21 +19,21 @@ module TurboForm
     end
 
     private
-      def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
-      def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
-      def turbo_form_resource_name = controller_name.singularize
-      def dynamic_action = params.require(:dynamic_action)
+    def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
+    def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
+    def turbo_form_resource_name = controller_name.singularize
+    def dynamic_action = params.require(:dynamic_action)
 
-      # Active Record saves `has_many` writers and `*_ids=` on assignment, and
-      # this action exists only to render.
-      def discarding_writes
-        return yield unless defined?(ActiveRecord::Base)
+    # Active Record saves `has_many` writers and `*_ids=` on assignment, and
+    # this action exists only to render.
+    def discarding_writes
+      return yield unless defined?(ActiveRecord::Base)
 
-        ActiveRecord::Base.transaction do
-          yield
-          raise ActiveRecord::Rollback
-        end
+      ActiveRecord::Base.transaction do
+        yield
+        raise ActiveRecord::Rollback
       end
+    end
   end
 
   module Resource
