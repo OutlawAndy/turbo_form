@@ -133,9 +133,9 @@ For a `WidgetsController`:
 - `new` and `edit` set `@widget`,
 - `widget_params` permits the form's fields — the same method `create` and
   `update` already use, so a trigger assigns nothing a save wouldn't,
-- `new` and `edit` leave rendering to Rails. The values are assigned just before
-  Rails' implicit render, so an action that calls `render` itself renders its
-  object as it built it, and one that redirects still redirects.
+- `new` and `edit` render their own template, implicitly or with `render`
+  themselves — `render layout: 'panel'` is fine. The values are assigned just
+  before it renders; an action that redirects still redirects.
 
 ### Switching an STI subclass
 

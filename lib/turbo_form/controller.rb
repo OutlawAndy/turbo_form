@@ -1,20 +1,22 @@
 module TurboForm
   # Included into the host's ApplicationController. A request that
   # TurboForm::Routes marks runs `new` or `edit` as usual, callbacks and all,
-  # then assigns the form to what the action built just before the implicit
-  # render.
+  # then assigns the form to what the action built just before it renders --
+  # implicitly, or with its own `render layout: 'panel'`.
   #
-  # Leans on the scaffold's conventions: the action builds `@<resource>`,
-  # `<resource>_params` permits the form, and the action leaves rendering to Rails.
+  # Leans on the scaffold's conventions: the action builds `@<resource>` and
+  # `<resource>_params` permits the form.
   module Controller
+    # Public, as Rails' own is. ActionController::Base's public methods are never
+    # actions, so this one isn't either.
+    def render(...)
+      dynamic_form_assignment if dynamic_form?
+      super
+    end
+
     private
     def process_action(...)
       dynamic_form? ? discarding_writes { super } : super
-    end
-
-    def default_render
-      dynamic_form_assignment if dynamic_form?
-      super
     end
 
     def dynamic_form_assignment
