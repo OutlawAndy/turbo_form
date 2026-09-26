@@ -9,32 +9,20 @@ module TurboForm
   # template renders it.
   module Controller
     def dynamic_form
-      namesake = params.require(:turbo_form)
-      ivar = :"@#{turbo_form_resource}"
-
       discarding_writes do
-        send(namesake)
-        instance_variable_set(ivar, turbo_form_assign(instance_variable_get(ivar), send(:"#{turbo_form_resource}_params")))
-        render namesake
+        process_action(dynamic_action)
+        turbo_form_resource.extend(TurboForm::Resource)
+        turbo_form_resource.assign_attributes(turbo_form_resource_params)
+        @_response_body = nil
+        render dynamic_action
       end
     end
 
     private
-      def turbo_form_resource = controller_name.singularize
-
-      # Switches to the STI subclass the submitted `type` names before assigning,
-      # so nested records land on the object that is kept.
-      def turbo_form_assign(object, submitted)
-        turbo_form_retype(object, submitted).tap { |record| record.assign_attributes(submitted) }
-      end
-
-      def turbo_form_retype(object, submitted)
-        column = object.class.try(:inheritance_column)
-        return object unless column && submitted.key?(column)
-
-        subclass = object.class.base_class.new(column => submitted[column]).class
-        object.instance_of?(subclass) ? object : object.becomes(subclass)
-      end
+      def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
+      def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
+      def turbo_form_resource_name = controller_name.singularize
+      def dynamic_action = params.require(:dynamic_action)
 
       # Active Record saves `has_many` writers and `*_ids=` on assignment, and
       # this action exists only to render.
@@ -46,5 +34,25 @@ module TurboForm
           raise ActiveRecord::Rollback
         end
       end
+  end
+
+  module Resource
+    def assign_attributes(params)
+      super(params)
+      becomes!(sti_class_for(self[inheritance_column])) if can_become?
+      self
+    end
+
+    def can_become?
+      inheritance_column.present? && self[inheritance_column].present?
+    end
+
+    def sti_class_for(type)
+      self.class.sti_class_for(type) if self.class.respond_to?(:sti_class_for)
+    end
+
+    def inheritance_column
+      self.class.inheritance_column if self.class.respond_to?(:inheritance_column)
+    end
   end
 end
