@@ -1,4 +1,4 @@
-# Ship the Stimulus controller and nothing else.
+# Ship the script and nothing else.
 *
 !app/
 !app/assets/
