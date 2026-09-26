@@ -36,8 +36,8 @@ Then run the installer:
 rails generate turbo_form:install
 ```
 
-It mixes the action into your ApplicationController and declares the route
-concern:
+It includes `TurboForm::Controller` in your ApplicationController and declares
+the route concern:
 
 ```ruby
 class ApplicationController < ActionController::Base
@@ -55,6 +55,10 @@ which ones to you:
 ```ruby
 resources :widgets, concerns: :turbo_form
 ```
+
+It draws a PATCH beside whichever of `new` and `edit` the resource has, so
+`resources :widgets, only: %i[new create], concerns: :turbo_form` gets only the
+one for `new`.
 
 On a stock Rails app — Propshaft, importmap-rails, stimulus-rails — the Stimulus
 controller registers itself and that's all. On an app that bundles with esbuild,
@@ -102,11 +106,12 @@ inherits from, so it works without SimpleForm being involved at all:
 ## What a trigger does
 
 A trigger PATCHes the whole form to its own page — `/widgets/new` or
-`/widgets/:id/edit` — which the route concern sends to `dynamic_form`. That
-action:
+`/widgets/:id/edit` — which the route concern sends to that page's own action.
+The request:
 
-1. runs the page's own action (`new` or `edit`), building `@widget` the way it
-   always does — found by id, built from a parent, whatever it does,
+1. runs `new` or `edit` as an ordinary visit would, callbacks and all, building
+   `@widget` the way it always does — found by id, built from a parent,
+   whatever it does,
 2. assigns `widget_params` to it,
 3. renders the page's own template,
 
@@ -118,18 +123,19 @@ the form itself.
 
 The rollback is there because Active Record saves some assignments on the spot
 (`has_many` writers, `*_ids=`). A trigger exists to render, so nothing it does is
-kept — including anything else the action writes.
+kept — including anything else the action or its callbacks write.
 
 ### The conventions it leans on
 
-`dynamic_form` knows nothing about your resource beyond its controller's name.
+turbo_form knows nothing about your resource beyond its controller's name.
 For a `WidgetsController`:
 
 - `new` and `edit` set `@widget`,
 - `widget_params` permits the form's fields — the same method `create` and
   `update` already use, so a trigger assigns nothing a save wouldn't,
-- `new` and `edit` leave rendering to Rails. One that calls `render` or
-  `redirect_to` itself raises `AbstractController::DoubleRenderError`.
+- `new` and `edit` leave rendering to Rails. The values are assigned just before
+  Rails' implicit render, so an action that calls `render` itself renders its
+  object as it built it, and one that redirects still redirects.
 
 ### Switching an STI subclass
 

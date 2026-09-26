@@ -1,31 +1,34 @@
 module TurboForm
-  # Included into the host's ApplicationController, where its public method
-  # counts as an action -- Rails treats every public method of the abstract
-  # ActionController::Base as internal, so it can't live there. Only a resource
-  # drawn with TurboForm::Routes routes to it.
+  # Included into the host's ApplicationController. A request that
+  # TurboForm::Routes marks runs `new` or `edit` as usual, callbacks and all,
+  # then assigns the form to what the action built just before the implicit
+  # render.
   #
-  # Leans on the scaffold's conventions: the namesake action builds
-  # `@<resource>`, `<resource>_params` permits the form, and the namesake's own
-  # template renders it.
+  # Leans on the scaffold's conventions: the action builds `@<resource>`,
+  # `<resource>_params` permits the form, and the action leaves rendering to Rails.
   module Controller
-    def dynamic_form
-      discarding_writes do
-        process_action(dynamic_action)
-        turbo_form_resource.extend(TurboForm::Resource)
-        turbo_form_resource.assign_attributes(turbo_form_resource_params)
-        @_response_body = nil
-        render dynamic_action
-      end
+    private
+    def process_action(...)
+      dynamic_form? ? discarding_writes { super } : super
     end
 
-    private
+    def default_render
+      dynamic_form_assignment if dynamic_form?
+      super
+    end
+
+    def dynamic_form_assignment
+      resource = turbo_form_resource.extend(TurboForm::Resource).dynamic_assign(turbo_form_resource_params)
+      instance_variable_set(:"@#{turbo_form_resource_name}", resource)
+    end
+
+    def dynamic_form? = request.path_parameters[:dynamic_form]
     def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
     def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
     def turbo_form_resource_name = controller_name.singularize
-    def dynamic_action = params.require(:dynamic_action)
 
     # Active Record saves `has_many` writers and `*_ids=` on assignment, and
-    # this action exists only to render.
+    # this request exists only to render.
     def discarding_writes
       return yield unless defined?(ActiveRecord::Base)
 
@@ -36,23 +39,22 @@ module TurboForm
     end
   end
 
+  # Switches to the STI subclass the submitted `type` names before assigning, so
+  # nested records land on the object that is kept -- which is returned.
   module Resource
-    def assign_attributes(params)
-      super(params)
-      becomes!(sti_class_for(self[inheritance_column])) if can_become?
-      self
+    def dynamic_assign(params)
+      retype(params).tap { it.assign_attributes(params) }
     end
 
-    def can_become?
-      inheritance_column.present? && self[inheritance_column].present?
+    private
+    def retype(params)
+      type = inheritance_column && params[inheritance_column]
+      return self if type.blank?
+
+      subclass = self.class.sti_class_for(type)
+      instance_of?(subclass) ? self : becomes!(subclass)
     end
 
-    def sti_class_for(type)
-      self.class.sti_class_for(type) if self.class.respond_to?(:sti_class_for)
-    end
-
-    def inheritance_column
-      self.class.inheritance_column if self.class.respond_to?(:inheritance_column)
-    end
+    def inheritance_column = self.class.try(:inheritance_column)
   end
 end

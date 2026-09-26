@@ -2,12 +2,13 @@
 
 ## Unreleased
 
-- **Breaking:** a trigger PATCHes its form to the page it is on, where a shadow
-  action runs that page's own `new` or `edit`, assigns `<resource>_params` to
+- **Breaking:** a trigger PATCHes its form to the page it is on, which runs that
+  page's own `new` or `edit`, callbacks and all, assigns `<resource>_params` to
   `@<resource>` and renders the page's own template, inside a transaction that
   is always rolled back. Include `TurboForm::Controller` in ApplicationController,
   declare `concern :turbo_form, TurboForm::Routes` and draw it on each resource
-  with a dynamic form; `rails generate turbo_form:install` does the first two.
+  with a dynamic form, where it routes whichever of `new` and `edit` the resource
+  has; `rails generate turbo_form:install` does the first two.
   Because the controller assigns before anything renders, the whole page sees
   what was typed, and only what the params method permits is assigned.
 - **Breaking:** `turbo_form_assign`, the `X-Turbo-Form` header and its rollback
