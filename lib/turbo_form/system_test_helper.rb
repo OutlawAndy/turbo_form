@@ -4,7 +4,7 @@ module TurboForm::SystemTestHelper
   #   expect_dynamic_form_request { select "Bourbon", from: "Category" }
   #   select "Barrel Aged", from: "Flavor"
   def expect_dynamic_form_request
-    completed = page.find("html")["data-turbo-form-visits"].to_i + 1
+    completed = page.find('html')['data-turbo-form-visits'].to_i + 1
 
     yield
 

@@ -50,37 +50,37 @@ module TurboForm
     end
 
     private
-      # Every other field helper -- generated and hand-written alike -- passes its
-      # attributes through here on the way to the tag.
-      def objectify_options(options)
-        super(absorb_trigger(options))
-      end
+    # Every other field helper -- generated and hand-written alike -- passes its
+    # attributes through here on the way to the tag.
+    def objectify_options(options)
+      super(absorb_trigger(options))
+    end
 
-      # A trailing `dynamic_trigger:` binds to `options` because Ruby folds bare
-      # keywords into the first optional positional hash -- but for these helpers
-      # that hash is the *select's* options, not the tag's. Carry it across.
-      # SimpleForm arrives on the other side, via `input_html:`, so take it from
-      # either.
-      def hoist_trigger(options, html_options)
-        return [ options, absorb_trigger(html_options) ] unless options.key?(:dynamic_trigger)
+    # A trailing `dynamic_trigger:` binds to `options` because Ruby folds bare
+    # keywords into the first optional positional hash -- but for these helpers
+    # that hash is the *select's* options, not the tag's. Carry it across.
+    # SimpleForm arrives on the other side, via `input_html:`, so take it from
+    # either.
+    def hoist_trigger(options, html_options)
+      return [ options, absorb_trigger(html_options) ] unless options.key?(:dynamic_trigger)
 
-        trigger = options[:dynamic_trigger]
-        [ options.except(:dynamic_trigger), absorb_trigger(html_options.merge(dynamic_trigger: trigger)) ]
-      end
+      trigger = options[:dynamic_trigger]
+      [ options.except(:dynamic_trigger), absorb_trigger(html_options.merge(dynamic_trigger: trigger)) ]
+    end
 
-      def absorb_trigger(attributes)
-        return attributes unless attributes.key?(:dynamic_trigger)
+    def absorb_trigger(attributes)
+      return attributes unless attributes.key?(:dynamic_trigger)
 
-        trigger = attributes[:dynamic_trigger]
-        attributes = attributes.except(:dynamic_trigger)
-        return attributes unless trigger
+      trigger = attributes[:dynamic_trigger]
+      attributes = attributes.except(:dynamic_trigger)
+      return attributes unless trigger
 
-        attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger) })
-      end
+      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger) })
+    end
 
-      # Left blank for `true`, which the script reads as the element's own
-      # default: `change` for a select, `input` for a text field, `click` for a
-      # button.
-      def trigger_event(trigger) = trigger == true ? "" : trigger.to_s
+    # Left blank for `true`, which the script reads as the element's own
+    # default: `change` for a select, `input` for a text field, `click` for a
+    # button.
+    def trigger_event(trigger) = trigger == true ? '' : trigger.to_s
   end
 end
