@@ -1,12 +1,12 @@
-require_relative "boot"
+require_relative 'boot'
 
-require "rails"
+require 'rails'
 # Deliberately minimal: turbo_form needs nothing beyond Active Model, Action
 # Controller and Action View, and booting without Active Record keeps that honest.
-require "active_model/railtie"
-require "action_controller/railtie"
-require "action_view/railtie"
-require "rails/test_unit/railtie"
+require 'active_model/railtie'
+require 'action_controller/railtie'
+require 'action_view/railtie'
+require 'rails/test_unit/railtie'
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.

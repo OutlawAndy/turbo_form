@@ -1,0 +1,18 @@
+<%= form_for @widget, dynamic: true do |f| %>
+  <% @widget.errors.full_messages.each do |message| %>
+    <p class="error"><%= message %></p>
+  <% end %>
+
+  <%= f.label :category %>
+  <%= f.select :category, @widget.categories, { include_blank: true }, dynamic_trigger: true %>
+
+  <div id="flavor-field">
+    <%= f.label :flavor %>
+    <%= f.select :flavor, @widget.flavors %>
+  </div>
+
+  <%= f.label :notes %>
+  <%= f.text_field :notes %>
+
+  <%= f.submit "Save" %>
+<% end %>
