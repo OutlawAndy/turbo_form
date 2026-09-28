@@ -12,6 +12,14 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_current_path new_widget_path, ignore_query: true
   end
 
+  test 'expect_dynamic_form_request waits from inside within' do
+    visit new_widget_path
+
+    within('form') { expect_dynamic_form_request { select 'fruit', from: 'Category' } }
+
+    assert_select 'Flavor', with_options: [ 'banana' ]
+  end
+
   test 'Turbo renders the page by morphing it' do
     visit new_widget_path
     execute_script %(addEventListener("turbo:render", ({ detail }) => window.renderMethod = detail.renderMethod))

@@ -78,9 +78,11 @@ module TurboForm
       [ options.except(*DYNAMIC_OPTIONS), absorb_trigger(html_options.merge(options.slice(*DYNAMIC_OPTIONS))) ]
     end
 
+    def absorb_trigger(attributes) = FormBuilder.absorb_trigger(attributes, @template)
+
     # `dynamic_action:` makes a trigger of its own, on the default event unless
     # `dynamic_trigger:` names one. It takes whatever `url_for` does.
-    def absorb_trigger(attributes)
+    def self.absorb_trigger(attributes, template)
       return attributes unless attributes.keys.intersect?(DYNAMIC_OPTIONS)
 
       trigger, action = attributes.values_at(*DYNAMIC_OPTIONS)
@@ -88,12 +90,12 @@ module TurboForm
       trigger ||= action.present?
       return attributes unless trigger
 
-      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: (@template.url_for(action) if action) })
+      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: (template.url_for(action) if action) })
     end
 
     # Left blank for `true`, which the script reads as the element's own
     # default: `change` for a select, `input` for a text field, `click` for a
     # button.
-    def trigger_event(trigger) = trigger == true ? '' : trigger.to_s
+    def self.trigger_event(trigger) = trigger == true ? '' : trigger.to_s
   end
 end
