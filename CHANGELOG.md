@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- `turbo_form_render?`, a controller and view helper, tells a trigger's
+  re-render from an ordinary visit, for a layout or template that should answer
+  differently to one.
 - A dynamic `new` or `edit` that calls `render` itself, such as
   `render layout: 'panel'`, now renders what was typed. Only Rails' implicit
   render used to be assigned to.

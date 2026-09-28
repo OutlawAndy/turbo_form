@@ -1,4 +1,4 @@
-<h1>New <%= @widget.category %> widget</h1>
+<h1 data-rerender="<%= turbo_form_render? %>">New <%= @widget.category %> widget</h1>
 
 <%# A cookie rather than a param, since the form reloads a URL of its own %>
 <% if cookies[:framed] %>

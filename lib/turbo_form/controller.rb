@@ -7,16 +7,26 @@ module TurboForm
   # Leans on the scaffold's conventions: the action builds `@<resource>` and
   # `<resource>_params` permits the form.
   module Controller
+    extend ActiveSupport::Concern
+
+    included do
+      helper_method :turbo_form_render?
+    end
+
     # Public, as Rails' own is. ActionController::Base's public methods are never
     # actions, so this one isn't either.
     def render(...)
-      dynamic_form_assignment if dynamic_form?
+      dynamic_form_assignment if turbo_form_render?
       super
     end
 
     private
+    # Whether this request is a trigger's re-render rather than a visit, for a
+    # layout or template that should answer differently to one.
+    def turbo_form_render? = request.path_parameters.key?(:dynamic_form)
+
     def process_action(...)
-      dynamic_form? ? discarding_writes { super } : super
+      turbo_form_render? ? discarding_writes { super } : super
     end
 
     def dynamic_form_assignment
@@ -24,7 +34,6 @@ module TurboForm
       instance_variable_set(:"@#{turbo_form_resource_name}", resource)
     end
 
-    def dynamic_form? = request.path_parameters[:dynamic_form]
     def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
     def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
     def turbo_form_resource_name = controller_name.singularize
