@@ -85,6 +85,16 @@ class DynamicTriggerTest < ActionView::TestCase
     assert_not_includes render_field(:text_field, :notes, dynamic_action: '/widgets/summary'), 'dynamic_action'
   end
 
+  # Builder methods other gems add, like country_select's, hand html_options
+  # straight to their tag, so the select's renderer picks the trigger up there.
+  test 'reaches a select whose builder method passes html_options through untouched' do
+    html = fields(model: @widget) { |f| select(f.object_name, :category, %w[fruit], {}, { dynamic_action: '/widgets/summary' }) }
+    attributes = Nokogiri::HTML5.fragment(html).at('select').attributes.transform_values(&:value)
+
+    assert_equal '/widgets/summary', attributes['data-turbo-form-action']
+    assert_nil attributes['dynamic_action']
+  end
+
   test 'does not mutate the options it was handed' do
     options = { dynamic_trigger: true }
     render_field(:text_field, :notes, **options)

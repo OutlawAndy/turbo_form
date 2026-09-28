@@ -1,6 +1,7 @@
 require 'turbo-rails'
 require 'turbo_form/form_helper'
 require 'turbo_form/form_builder'
+require 'turbo_form/select_renderer'
 require 'turbo_form/routes'
 require 'turbo_form/controller'
 
@@ -59,6 +60,7 @@ module TurboForm
 
       ActionView::Helpers::FormHelper.prepend(TurboForm::FormHelper)
       ActionView::Helpers::FormBuilder.prepend(TurboForm::FormBuilder)
+      ActionView::Helpers::Tags::SelectRenderer.prepend(TurboForm::SelectRenderer)
     end
   end
 end
