@@ -52,6 +52,16 @@ module TurboForm
       super(method, *hoist_trigger(options, html_options))
     end
 
+    # These two hand their options straight to the tag helper, skipping
+    # `objectify_options`, and take them first when no value is given.
+    def submit(value = nil, options = {})
+      value.is_a?(Hash) ? super(absorb_trigger(value)) : super(value, absorb_trigger(options))
+    end
+
+    def button(value = nil, options = {}, &block)
+      value.is_a?(Hash) ? super(absorb_trigger(value), &block) : super(value, absorb_trigger(options), &block)
+    end
+
     private
     # Every other field helper -- generated and hand-written alike -- passes its
     # attributes through here on the way to the tag.
@@ -69,7 +79,7 @@ module TurboForm
     end
 
     # `dynamic_action:` makes a trigger of its own, on the default event unless
-    # `dynamic_trigger:` names one.
+    # `dynamic_trigger:` names one. It takes whatever `url_for` does.
     def absorb_trigger(attributes)
       return attributes unless attributes.keys.intersect?(DYNAMIC_OPTIONS)
 
@@ -78,7 +88,7 @@ module TurboForm
       trigger ||= action.present?
       return attributes unless trigger
 
-      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: action })
+      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: (@template.url_for(action) if action) })
     end
 
     # Left blank for `true`, which the script reads as the element's own

@@ -104,4 +104,12 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_selector '#summary', text: 'A banana widget'
     assert_nil evaluate_script('window.pageRendered')
   end
+
+  test 'a button with an action of its own renders the stream a failed validation answers with' do
+    visit new_widget_path
+
+    expect_dynamic_form_request { click_on 'Summarize' }
+
+    assert_selector '#summary', text: "Flavor can't be blank"
+  end
 end

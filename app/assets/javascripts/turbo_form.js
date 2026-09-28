@@ -33,7 +33,7 @@ class FormRefresh {
     try {
       const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: { ...this.target.headers, "X-CSRF-Token": csrfToken() } })
 
-      this.target.render(response.status, await response.text())
+      await this.target.render(response)
     } finally {
       this.requestFinished()
     }
@@ -54,13 +54,15 @@ class PageTarget {
   elements = []
   headers = { Accept: "text/html" }
 
-  render(statusCode, responseHTML) {
+  async render(response) {
+    const responseHTML = await response.text()
+
     document.addEventListener("turbo:load", countVisit, { once: true })
     Turbo.visit(location.href, {
       action: "replace",
       shouldCacheSnapshot: false,
       refresh: { method: "morph", scroll: "preserve" },
-      response: { statusCode, responseHTML }
+      response: { statusCode: response.status, responseHTML }
     })
   }
 }
@@ -75,22 +77,26 @@ class FrameTarget {
     return { Accept: "text/html", "Turbo-Frame": this.element.id }
   }
 
-  render(_statusCode, responseHTML) {
-    const frame = new DOMParser().parseFromString(responseHTML, "text/html").getElementById(this.element.id)
+  async render(response) {
+    const frame = new DOMParser().parseFromString(await response.text(), "text/html").getElementById(this.element.id)
 
     Turbo.morphTurboFrameElements(this.element, frame)
     countVisit()
   }
 }
 
+const streamType = "text/vnd.turbo-stream.html"
+
+// Whatever the status, as Turbo does for a form: a 422 stream of errors is
+// rendered too. Anything else, like an HTML error page, isn't a stream to render.
 class StreamTarget {
   elements = []
-  headers = { Accept: "text/vnd.turbo-stream.html" }
+  headers = { Accept: streamType }
 
-  render(statusCode, responseHTML) {
-    if (statusCode < 200 || statusCode >= 300) return
+  async render(response) {
+    if (!response.headers.get("Content-Type")?.startsWith(streamType)) return
 
-    Turbo.renderStreamMessage(responseHTML)
+    Turbo.renderStreamMessage(await response.text())
     countVisit()
   }
 }
@@ -149,7 +155,7 @@ function eventFor(trigger) {
   const named = trigger.dataset.turboFormTrigger
   if (named) return named
   if (trigger.localName == "select") return "change"
-  if (trigger.type == "submit") return "click"
+  if (trigger.type == "submit" || trigger.type == "button") return "click"
 
   return "input"
 }

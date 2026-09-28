@@ -15,6 +15,8 @@ class WidgetsController < ApplicationController
 
   def summary
     @widget = Widget.new(widget_params)
+
+    render status: @widget.valid? ? :ok : :unprocessable_content
   end
 
   private

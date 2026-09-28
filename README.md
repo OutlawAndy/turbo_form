@@ -80,14 +80,14 @@ page of its model — `edit` once the record is saved — which is where
 ```
 
 `true` picks the element's natural event: `change` for a select, `click` for a
-submit button, `input` for everything else. Name an event when you want
+button, `input` for everything else. Name an event when you want
 something else — `:blur` on text fields is usually what you want, since the
 default fires on every keystroke. Any event name works, including custom ones
 dispatched by other Stimulus controllers — `dynamic_trigger: "autocomplete:selected"`
 — as long as the event is dispatched on the field or bubbles up from inside it.
 
-Works on every Rails field helper, including the select and date families where
-Rails keeps HTML attributes in a separate hash:
+Works on every Rails field helper and on `f.submit` and `f.button`, including
+the select and date families where Rails keeps HTML attributes in a separate hash:
 
 ```erb
 <%= f.collection_select :category_id, Category.all, :id, :name, dynamic_trigger: true %>
@@ -98,11 +98,13 @@ Rails keeps HTML attributes in a separate hash:
 ```erb
 <%= f.select :flavor, @widget.flavors, {}, dynamic_action: summary_widgets_path %>
 <%= f.text_field :zip, dynamic_action: lookup_path(form: "widget"), dynamic_trigger: :blur %>
+<%= f.button "Swap", type: "button", dynamic_action: [:swap, @estimate] %>
 ```
 
 For when the page's own render isn't the answer: the trigger PATCHes the whole
-form to that URL instead, asks for a Turbo Stream, and renders it on a 2xx.
-The action and its `.turbo_stream` template are yours. Nothing is assigned or
+form to that URL instead, asks for a Turbo Stream, and renders the stream it
+gets back, whatever its status, so a `422` of errors renders too. The URL is
+anything `url_for` takes. The action and its `.turbo_stream` template are yours. Nothing is assigned or
 rolled back for you, and the form doesn't need `dynamic: true`. It triggers on
 the field's default event unless `dynamic_trigger:` names one, and counts toward
 `expect_dynamic_form_request`.
