@@ -13,6 +13,12 @@ class WidgetsController < ApplicationController
     end
   end
 
+  def summary
+    @widget = Widget.new(widget_params)
+
+    render status: @widget.valid? ? :ok : :unprocessable_content
+  end
+
   private
   def widget_params = params.expect(widget: %i[category flavor notes])
 end

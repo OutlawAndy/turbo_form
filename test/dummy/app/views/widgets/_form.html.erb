@@ -8,8 +8,11 @@
 
   <div id="flavor-field">
     <%= f.label :flavor %>
-    <%= f.select :flavor, @widget.flavors %>
+    <%= f.select :flavor, @widget.flavors, {}, dynamic_action: %i[summary widgets] %>
   </div>
+
+  <%= f.button "Summarize", type: "button", dynamic_action: %i[summary widgets] %>
+  <p id="summary"></p>
 
   <%= f.label :notes %>
   <%= f.text_field :notes %>

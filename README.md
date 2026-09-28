@@ -64,7 +64,7 @@ It also imports the script into `app/javascript/application.js`, adding the npm
 package first if your app bundles with esbuild, Vite, Bun or webpack; see
 [JavaScript](#javascript) for doing that by hand.
 
-## The two options
+## The options
 
 ### `dynamic:` on the form
 
@@ -80,18 +80,34 @@ page of its model — `edit` once the record is saved — which is where
 ```
 
 `true` picks the element's natural event: `change` for a select, `click` for a
-submit button, `input` for everything else. Name an event when you want
+button, `input` for everything else. Name an event when you want
 something else — `:blur` on text fields is usually what you want, since the
 default fires on every keystroke. Any event name works, including custom ones
 dispatched by other Stimulus controllers — `dynamic_trigger: "autocomplete:selected"`
 — as long as the event is dispatched on the field or bubbles up from inside it.
 
-Works on every Rails field helper, including the select and date families where
-Rails keeps HTML attributes in a separate hash:
+Works on every Rails field helper and on `f.submit` and `f.button`, including
+the select and date families where Rails keeps HTML attributes in a separate hash:
 
 ```erb
 <%= f.collection_select :category_id, Category.all, :id, :name, dynamic_trigger: true %>
 ```
+
+### `dynamic_action:` on a field
+
+```erb
+<%= f.select :flavor, @widget.flavors, {}, dynamic_action: summary_widgets_path %>
+<%= f.text_field :zip, dynamic_action: lookup_path(form: "widget"), dynamic_trigger: :blur %>
+<%= f.button "Swap", type: "button", dynamic_action: [:swap, @estimate] %>
+```
+
+For when the page's own render isn't the answer: the trigger PATCHes the whole
+form to that URL instead, asks for a Turbo Stream, and renders the stream it
+gets back, whatever its status, so a `422` of errors renders too. The URL is
+anything `url_for` takes. The action and its `.turbo_stream` template are yours. Nothing is assigned or
+rolled back for you, and the form doesn't need `dynamic: true`. It triggers on
+the field's default event unless `dynamic_trigger:` names one, and counts toward
+`expect_dynamic_form_request`.
 
 ### With SimpleForm
 
@@ -217,6 +233,8 @@ It handles the common case well and gets out of the way otherwise.
   Write the action by hand when you need those — that path is still open.
 - **Resourceful pages only.** The form's URL comes from its model, so a page
   whose `new` or `edit` isn't the model's own route has nowhere to send it.
+  `dynamic_action:` is the way out, at the cost of writing the action and its
+  stream.
 - **Not a Turbo form submission.** Turbo renders a form's response only when it
   redirects or fails, so the trigger fetches the form itself and hands the
   response to a Turbo visit. Turbo renders the page — its morph, render events,

@@ -10,17 +10,22 @@ import { Turbo } from "@hotwired/turbo-rails"
 // handed the response, so its events, error page and progress bar all apply. A
 // frame is morphed directly, since Turbo's frame loading wants its own
 // unexported response object.
-export function refresh(form) {
-  return new FormRefresh(form).start()
+//
+// A trigger naming a URL of its own, with data-turbo-form-action, PATCHes the
+// form there instead and renders the Turbo Stream that comes back.
+export function refresh(form, trigger) {
+  return new FormRefresh(form, trigger).start()
 }
 
 // Shaped like Turbo's FormSubmission, which is what its navigator expects to be
 // told about.
 class FormRefresh {
-  constructor(formElement) {
+  constructor(formElement, trigger) {
+    const action = trigger?.dataset.turboFormAction
+
     this.formElement = formElement
-    this.location = new URL(formElement.dataset.turboFormUrl, location.href)
-    this.target = targetFor(formElement)
+    this.location = new URL(action || formElement.dataset.turboFormUrl, location.href)
+    this.target = action ? new StreamTarget() : targetFor(formElement)
   }
 
   async start() {
@@ -28,7 +33,7 @@ class FormRefresh {
     try {
       const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: { ...this.target.headers, "X-CSRF-Token": csrfToken() } })
 
-      this.target.render(response.status, await response.text())
+      await this.target.render(response)
     } finally {
       this.requestFinished()
     }
@@ -49,13 +54,15 @@ class PageTarget {
   elements = []
   headers = { Accept: "text/html" }
 
-  render(statusCode, responseHTML) {
+  async render(response) {
+    const responseHTML = await response.text()
+
     document.addEventListener("turbo:load", countVisit, { once: true })
     Turbo.visit(location.href, {
       action: "replace",
       shouldCacheSnapshot: false,
       refresh: { method: "morph", scroll: "preserve" },
-      response: { statusCode, responseHTML }
+      response: { statusCode: response.status, responseHTML }
     })
   }
 }
@@ -70,10 +77,26 @@ class FrameTarget {
     return { Accept: "text/html", "Turbo-Frame": this.element.id }
   }
 
-  render(_statusCode, responseHTML) {
-    const frame = new DOMParser().parseFromString(responseHTML, "text/html").getElementById(this.element.id)
+  async render(response) {
+    const frame = new DOMParser().parseFromString(await response.text(), "text/html").getElementById(this.element.id)
 
     Turbo.morphTurboFrameElements(this.element, frame)
+    countVisit()
+  }
+}
+
+const streamType = "text/vnd.turbo-stream.html"
+
+// Whatever the status, as Turbo does for a form: a 422 stream of errors is
+// rendered too. Anything else, like an HTML error page, isn't a stream to render.
+class StreamTarget {
+  elements = []
+  headers = { Accept: streamType }
+
+  async render(response) {
+    if (!response.headers.get("Content-Type")?.startsWith(streamType)) return
+
+    Turbo.renderStreamMessage(await response.text())
     countVisit()
   }
 }
@@ -123,7 +146,7 @@ class TriggerObserver {
     const trigger = target.closest?.(triggerSelector)
     const form = trigger?.form
 
-    if (form?.dataset.turboFormUrl && eventFor(trigger) == type) this.delegate.triggerFired(form)
+    if (form && (trigger.dataset.turboFormAction || form.dataset.turboFormUrl) && eventFor(trigger) == type) this.delegate.triggerFired(form, trigger)
   }
 }
 
@@ -132,7 +155,7 @@ function eventFor(trigger) {
   const named = trigger.dataset.turboFormTrigger
   if (named) return named
   if (trigger.localName == "select") return "change"
-  if (trigger.type == "submit") return "click"
+  if (trigger.type == "submit" || trigger.type == "button") return "click"
 
   return "input"
 }

@@ -93,4 +93,23 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     assert_equal %w[form:true turbo-frame:true], evaluate_script('window.busy').first(2)
     assert_no_selector '[aria-busy], turbo-frame[busy]'
   end
+
+  test 'a trigger with an action of its own renders the Turbo Stream it answers with' do
+    visit new_widget_path
+    expect_dynamic_form_request { select 'fruit', from: 'Category' }
+    execute_script %(addEventListener("turbo:render", () => window.pageRendered = true))
+
+    expect_dynamic_form_request { select 'banana', from: 'Flavor' }
+
+    assert_selector '#summary', text: 'A banana widget'
+    assert_nil evaluate_script('window.pageRendered')
+  end
+
+  test 'a button with an action of its own renders the stream a failed validation answers with' do
+    visit new_widget_path
+
+    expect_dynamic_form_request { click_on 'Summarize' }
+
+    assert_selector '#summary', text: "Flavor can't be blank"
+  end
 end

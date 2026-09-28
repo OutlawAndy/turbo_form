@@ -1,10 +1,25 @@
 # Changelog
 
-## Unreleased
+## 0.8.0
 
+- `dynamic_action:` on a field sends the form to a URL of its own instead of
+  its page, and renders the Turbo Stream the app answers with, whatever its
+  status. It takes anything `url_for` does, triggers on the field's default
+  event unless `dynamic_trigger:` names one, and doesn't need `dynamic: true`.
+- `f.submit` and `f.button` take `dynamic_trigger:` and `dynamic_action:`. They
+  used to write them into the markup as raw attributes. A `type="button"`
+  triggers on `click`.
 - `turbo_form_render?`, a controller and view helper, tells a trigger's
   re-render from an ordinary visit, for a layout or template that should answer
   differently to one.
+
+## 0.7.1
+
+- A trigger sends the page's CSRF token, which vouches for any request, instead
+  of the form's own, which per-form tokens scope to its action and method.
+
+## 0.7.0
+
 - A dynamic `new` or `edit` that calls `render` itself, such as
   `render layout: 'panel'`, now renders what was typed. Only Rails' implicit
   render used to be assigned to.

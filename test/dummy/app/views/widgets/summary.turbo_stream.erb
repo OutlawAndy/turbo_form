@@ -1,0 +1,1 @@
+<%= turbo_stream.update "summary", @widget.errors.any? ? @widget.errors.full_messages.to_sentence : "A #{@widget.flavor} widget" %>
