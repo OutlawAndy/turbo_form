@@ -26,7 +26,7 @@ class FormRefresh {
   async start() {
     this.requestStarted()
     try {
-      const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: this.target.headers })
+      const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: { ...this.target.headers, "X-CSRF-Token": csrfToken() } })
 
       this.target.render(response.status, await response.text())
     } finally {
@@ -86,6 +86,13 @@ function targetFor(form) {
   const frame = id === "_top" ? null : id ? document.getElementById(id) : enclosing
 
   return frame ? new FrameTarget(frame) : new PageTarget()
+}
+
+// The form's own authenticity token is scoped to its action and method when
+// per-form tokens are on, as they are by default, so it can't vouch for this
+// PATCH. The page's token can, as it does for Turbo's own submissions.
+function csrfToken() {
+  return document.querySelector('meta[name="csrf-token"]')?.content
 }
 
 const triggerSelector = "[data-turbo-form-trigger]"
