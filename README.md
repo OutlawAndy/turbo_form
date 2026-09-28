@@ -145,6 +145,16 @@ can turn a `Gizmo` into a `Doohickey` and the rest of the page answers as one.
 Give the form its base class's scope (`scope: :gadget`) so the switched object
 reads and posts under the same name, and permit `type` in the params method.
 
+### Telling a trigger from a visit
+
+`turbo_form_render?` is true while a trigger's request is rendering, in the
+controller and in views, so a layout can leave alone what an ordinary visit
+would set up — a modal that animates open on arrival, say:
+
+```erb
+<div data-open-on-connect="<%= !turbo_form_render? %>">
+```
+
 ### Inside a Turbo Frame
 
 A form inside a `<turbo-frame>`, or one naming a frame with

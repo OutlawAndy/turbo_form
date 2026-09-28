@@ -5,7 +5,7 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
     patch new_widget_url, params: { widget: { category: 'fruit', flavor: 'banana' } }
 
     assert_response :success
-    assert_select 'h1', text: 'New fruit widget'
+    assert_select 'h1[data-rerender=true]', text: 'New fruit widget'
     assert_equal %w[apple banana cherry], css_select('#flavor-field option').map(&:text)
     assert_equal 'banana', css_select('#flavor-field option[selected]').first.text
   end
@@ -19,7 +19,7 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
   test 'an ordinary visit with the state in its URL ignores it' do
     get new_widget_url, params: { widget: { category: 'fruit' } }
 
-    assert_select 'h1', text: 'New widget'
+    assert_select 'h1[data-rerender=false]', text: 'New widget'
     assert_empty css_select('#flavor-field option')
   end
 end
