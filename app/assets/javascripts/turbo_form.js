@@ -10,17 +10,22 @@ import { Turbo } from "@hotwired/turbo-rails"
 // handed the response, so its events, error page and progress bar all apply. A
 // frame is morphed directly, since Turbo's frame loading wants its own
 // unexported response object.
-export function refresh(form) {
-  return new FormRefresh(form).start()
+//
+// A trigger naming a URL of its own, with data-turbo-form-action, PATCHes the
+// form there instead and renders the Turbo Stream that comes back.
+export function refresh(form, trigger) {
+  return new FormRefresh(form, trigger).start()
 }
 
 // Shaped like Turbo's FormSubmission, which is what its navigator expects to be
 // told about.
 class FormRefresh {
-  constructor(formElement) {
+  constructor(formElement, trigger) {
+    const action = trigger?.dataset.turboFormAction
+
     this.formElement = formElement
-    this.location = new URL(formElement.dataset.turboFormUrl, location.href)
-    this.target = targetFor(formElement)
+    this.location = new URL(action || formElement.dataset.turboFormUrl, location.href)
+    this.target = action ? new StreamTarget() : targetFor(formElement)
   }
 
   async start() {
@@ -78,6 +83,18 @@ class FrameTarget {
   }
 }
 
+class StreamTarget {
+  elements = []
+  headers = { Accept: "text/vnd.turbo-stream.html" }
+
+  render(statusCode, responseHTML) {
+    if (statusCode < 200 || statusCode >= 300) return
+
+    Turbo.renderStreamMessage(responseHTML)
+    countVisit()
+  }
+}
+
 // Turbo's own targeting: the form's data-turbo-frame, then the target of the
 // frame it sits in, then that frame itself. "_top" means the page.
 function targetFor(form) {
@@ -123,7 +140,7 @@ class TriggerObserver {
     const trigger = target.closest?.(triggerSelector)
     const form = trigger?.form
 
-    if (form?.dataset.turboFormUrl && eventFor(trigger) == type) this.delegate.triggerFired(form)
+    if (form && (trigger.dataset.turboFormAction || form.dataset.turboFormUrl) && eventFor(trigger) == type) this.delegate.triggerFired(form, trigger)
   }
 }
 

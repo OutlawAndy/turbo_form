@@ -13,6 +13,10 @@ class WidgetsController < ApplicationController
     end
   end
 
+  def summary
+    @widget = Widget.new(widget_params)
+  end
+
   private
   def widget_params = params.expect(widget: %i[category flavor notes])
 end

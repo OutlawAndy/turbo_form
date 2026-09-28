@@ -44,8 +44,27 @@ class DynamicTriggerTest < ActionView::TestCase
     assert_equal 'change', attributes['data-turbo-form-trigger']
   end
 
+  test 'dynamic_action: names the URL and triggers on the default event' do
+    attributes = field(:text_field, :notes, dynamic_action: '/widgets/summary')
+
+    assert_equal '/widgets/summary', attributes['data-turbo-form-action']
+    assert_equal '', attributes['data-turbo-form-trigger']
+  end
+
+  test 'dynamic_action: triggers on the event dynamic_trigger: names' do
+    assert_equal 'blur', field(:text_field, :notes, dynamic_action: '/widgets/summary', dynamic_trigger: :blur)['data-turbo-form-trigger']
+  end
+
+  test 'dynamic_action: reaches the select of a plain select' do
+    attributes = field(:select, :category, %w[fruit], dynamic_action: '/widgets/summary')
+
+    assert_equal '/widgets/summary', attributes['data-turbo-form-action']
+    assert_nil attributes['dynamic_action']
+  end
+
   test 'never leaks into the markup' do
     assert_not_includes render_field(:text_field, :notes, dynamic_trigger: true), 'dynamic_trigger'
+    assert_not_includes render_field(:text_field, :notes, dynamic_action: '/widgets/summary'), 'dynamic_action'
   end
 
   test 'does not mutate the options it was handed' do

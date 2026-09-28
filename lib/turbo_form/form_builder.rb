@@ -3,12 +3,15 @@ module TurboForm
   #
   #   f.text_field :name, dynamic_trigger: true      # re-render on the default event
   #   f.select :category, categories, {}, dynamic_trigger: :blur
+  #   f.select :flavor, flavors, {}, dynamic_action: summary_widgets_path  # stream from a URL of its own
   #
   # `dynamic_trigger:` always has to end up as a data attribute, but where it
   # *arrives* depends on the helper. Most treat their `options` hash as the tag's
   # HTML attributes; the select and date families keep those in a trailing
   # `html_options` instead, which is where these overrides earn their keep.
   module FormBuilder
+    DYNAMIC_OPTIONS = %i[dynamic_trigger dynamic_action].freeze
+
     def select(method, choices = nil, options = {}, html_options = {}, &block)
       super(method, choices, *hoist_trigger(options, html_options), &block)
     end
@@ -62,20 +65,20 @@ module TurboForm
     # SimpleForm arrives on the other side, via `input_html:`, so take it from
     # either.
     def hoist_trigger(options, html_options)
-      return [ options, absorb_trigger(html_options) ] unless options.key?(:dynamic_trigger)
-
-      trigger = options[:dynamic_trigger]
-      [ options.except(:dynamic_trigger), absorb_trigger(html_options.merge(dynamic_trigger: trigger)) ]
+      [ options.except(*DYNAMIC_OPTIONS), absorb_trigger(html_options.merge(options.slice(*DYNAMIC_OPTIONS))) ]
     end
 
+    # `dynamic_action:` makes a trigger of its own, on the default event unless
+    # `dynamic_trigger:` names one.
     def absorb_trigger(attributes)
-      return attributes unless attributes.key?(:dynamic_trigger)
+      return attributes unless attributes.keys.intersect?(DYNAMIC_OPTIONS)
 
-      trigger = attributes[:dynamic_trigger]
-      attributes = attributes.except(:dynamic_trigger)
+      trigger, action = attributes.values_at(*DYNAMIC_OPTIONS)
+      attributes = attributes.except(*DYNAMIC_OPTIONS)
+      trigger ||= action.present?
       return attributes unless trigger
 
-      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger) })
+      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: action })
     end
 
     # Left blank for `true`, which the script reads as the element's own
