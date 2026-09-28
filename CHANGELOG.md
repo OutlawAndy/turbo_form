@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- `dynamic_action:` on a field sends the form to a URL of its own instead of
+  its page, and renders the Turbo Stream the app answers with, whatever its
+  status. It takes anything `url_for` does, triggers on the field's default
+  event unless `dynamic_trigger:` names one, and doesn't need `dynamic: true`.
+- `f.submit` and `f.button` take `dynamic_trigger:` and `dynamic_action:`. They
+  used to write them into the markup as raw attributes. A `type="button"`
+  triggers on `click`.
 - `turbo_form_render?`, a controller and view helper, tells a trigger's
   re-render from an ordinary visit, for a layout or template that should answer
   differently to one.
