@@ -2,9 +2,8 @@ require 'rails/generators'
 
 module TurboForm
   module Generators
-    # Every app gets TurboForm::Controller, the route concern its resources opt
-    # into and an import of the script. On importmap-rails the engine pins the
-    # script itself; bundled apps get the npm package to import instead.
+    # Every app gets an import of the script. On importmap-rails the engine pins
+    # the script itself; bundled apps get the npm package to import instead.
     class InstallGenerator < Rails::Generators::Base
       LOCKFILES = {
         'yarn.lock' => 'yarn add', 'pnpm-lock.yaml' => 'pnpm add',
@@ -14,23 +13,11 @@ module TurboForm
       ENTRYPOINT = 'app/javascript/application.js'
 
       def install
-        include_controller
-        declare_route_concern
         install_package unless importmap?
         import_script
       end
 
       private
-      def include_controller
-        inject_into_class 'app/controllers/application_controller.rb', 'ApplicationController', "  include TurboForm::Controller\n"
-      end
-
-      # Declared once, drawn on no resource: which forms are dynamic is the
-      # app's call, one `concerns: :turbo_form` at a time.
-      def declare_route_concern
-        route 'concern :turbo_form, TurboForm::Routes'
-      end
-
       def importmap? = Rails.root.join('config/importmap.rb').exist?
 
       def install_package

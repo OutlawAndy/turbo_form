@@ -36,21 +36,12 @@ Then run the installer:
 rails generate turbo_form:install
 ```
 
-It includes `TurboForm::Controller` in your ApplicationController and declares
-the route concern:
+It imports the script into `app/javascript/application.js`, adding the npm
+package first if your app bundles with esbuild, Vite, Bun or webpack; see
+[JavaScript](#javascript) for doing that by hand.
 
-```ruby
-class ApplicationController < ActionController::Base
-  include TurboForm::Controller
-end
-```
-
-```ruby
-concern :turbo_form, TurboForm::Routes
-```
-
-Draw the concern on each resource with a dynamic form — the installer leaves
-which ones to you:
+The engine does the rest. Draw the `:turbo_form` route concern on each resource
+with a dynamic form:
 
 ```ruby
 resources :widgets, concerns: :turbo_form
@@ -58,11 +49,8 @@ resources :widgets, concerns: :turbo_form
 
 It draws a PATCH beside whichever of `new` and `edit` the resource has, so
 `resources :widgets, only: %i[new create], concerns: :turbo_form` gets only the
-one for `new`.
-
-It also imports the script into `app/javascript/application.js`, adding the npm
-package first if your app bundles with esbuild, Vite, Bun or webpack; see
-[JavaScript](#javascript) for doing that by hand.
+one for `new`. Every controller inheriting from `ActionController::Base` already
+knows how to answer it.
 
 ## The options
 
@@ -70,7 +58,7 @@ package first if your app bundles with esbuild, Vite, Bun or webpack; see
 
 `dynamic: true` makes the form dynamic: a trigger sends it to the `new` or `edit`
 page of its model — `edit` once the record is saved — which is where
-`TurboForm::Routes` listens.
+the route concern listens.
 
 ### `dynamic_trigger:` on a field
 

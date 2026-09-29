@@ -51,6 +51,14 @@ module TurboForm
       end
     end
 
+    initializer 'turbo_form.controller' do
+      ActiveSupport.on_load(:action_controller_base) { include TurboForm::Controller }
+    end
+
+    initializer 'turbo_form.routes' do
+      ActionDispatch::Routing::Mapper.prepend(TurboForm::Routes::Declared)
+    end
+
     # Deliberately eager rather than `ActiveSupport.on_load(:action_view)`: that
     # hook doesn't fire until Action View is first loaded, which in an app that
     # isn't eager loading is partway through rendering the first view -- late

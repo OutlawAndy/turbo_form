@@ -46,21 +46,10 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     end
   end
 
-  test 'mixes the shadow action into ApplicationController and declares the route concern' do
-    in_app do
-      run_generator
-
-      assert_file 'app/controllers/application_controller.rb', /class ApplicationController < ActionController::Base\n  include TurboForm::Controller\n/
-      assert_file 'config/routes.rb', /draw do\n  concern :turbo_form, TurboForm::Routes\n/
-    end
-  end
-
-  test 'running it twice adds each line once' do
+  test 'running it twice imports the script once' do
     in_app do
       2.times { run_generator }
 
-      assert_file('app/controllers/application_controller.rb') { |controller| assert_equal 1, controller.scan('include TurboForm::Controller').size }
-      assert_file('config/routes.rb') { |routes| assert_equal 1, routes.scan('concern :turbo_form').size }
       assert_file('app/javascript/application.js') { |js| assert_equal 1, js.scan('import').size }
     end
   end
@@ -87,9 +76,6 @@ class InstallGeneratorTest < Rails::Generators::TestCase
     FileUtils.mkdir_p File.join(destination_root, 'config')
     FileUtils.mkdir_p File.join(destination_root, 'app/javascript')
     File.write(File.join(destination_root, 'app/javascript/application.js'), '')
-    FileUtils.mkdir_p File.join(destination_root, 'app/controllers')
-    File.write(File.join(destination_root, 'app/controllers/application_controller.rb'), "class ApplicationController < ActionController::Base\nend\n")
-    File.write(File.join(destination_root, 'config/routes.rb'), "Rails.application.routes.draw do\nend\n")
 
     Rails.application.config.root = destination_root
     yield
