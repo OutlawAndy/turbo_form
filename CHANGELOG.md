@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.0
+
+- The engine includes `TurboForm::Controller` in `ActionController::Base` and
+  declares the `:turbo_form` route concern itself, so drawing
+  `concerns: :turbo_form` on a resource is the only setup a dynamic form needs.
+  The installer now only imports the script. Apps that include the module and
+  declare the concern themselves keep working; both lines can go.
+
 ## 0.8.0
 
 - `dynamic_action:` on a field sends the form to a URL of its own instead of

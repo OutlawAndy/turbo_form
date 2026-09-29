@@ -10,6 +10,10 @@ class TurboForm::EngineTest < ActiveSupport::TestCase
     assert_match %r{\A/assets/turbo_form-\h+\.js\z}, imports['turbo_form']
   end
 
+  test 'includes the controller in every ActionController::Base' do
+    assert_includes ActionController::Base.ancestors, TurboForm::Controller
+  end
+
   test "includes the system test helper in Minitest's system tests" do
     require 'action_dispatch/system_test_case'
 

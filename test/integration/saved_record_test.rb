@@ -51,7 +51,6 @@ class SavedRecordTest < ActionDispatch::IntegrationTest
   def with_gadget_routes(&)
     with_routing do |routes|
       routes.draw do
-        concern :turbo_form, TurboForm::Routes
         resources :gadgets, only: %i[new edit], concerns: :turbo_form
       end
       yield

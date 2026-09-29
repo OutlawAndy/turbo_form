@@ -1,5 +1,5 @@
 module TurboForm
-  # Included into the host's ApplicationController. A request that
+  # Included into ActionController::Base by the engine. A request that
   # TurboForm::Routes marks runs `new` or `edit` as usual, callbacks and all,
   # then assigns the form to what the action built just before it renders --
   # implicitly, or with its own `render layout: 'panel'`.
