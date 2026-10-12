@@ -2,6 +2,8 @@
 
 Dynamic forms for Rails, by convention.
 
+![title image](title_image.png)
+
 A form that needs to change as it is filled in — a dependent dropdown, a section
 that appears once you pick a type — usually costs you a route, a controller
 action, a Stimulus controller and some wiring. This gem asks for two words
