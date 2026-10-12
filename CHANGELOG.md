@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.9.0
+## [v0.9.0] Sep 29, 2026
 
 - The engine includes `TurboForm::Controller` in `ActionController::Base` and
   declares the `:turbo_form` route concern itself, so drawing
@@ -8,7 +8,13 @@
   The installer now only imports the script. Apps that include the module and
   declare the concern themselves keep working; both lines can go.
 
-## 0.8.0
+## [v0.8.1] Sep 28, 2026
+
+- `dynamic_trigger:` and `dynamic_action:` work on selects from other gems'
+  builder methods, like country_select's, which skip TurboForm's builder.
+- `expect_dynamic_form_request` works inside `within`.
+
+## [v0.8.0] Sep 28, 2026
 
 - `dynamic_action:` on a field sends the form to a URL of its own instead of
   its page, and renders the Turbo Stream the app answers with, whatever its
@@ -21,18 +27,18 @@
   re-render from an ordinary visit, for a layout or template that should answer
   differently to one.
 
-## 0.7.1
+## [v0.7.1] Sep 28, 2026
 
 - A trigger sends the page's CSRF token, which vouches for any request, instead
   of the form's own, which per-form tokens scope to its action and method.
 
-## 0.7.0
+## [v0.7.0] Sep 26, 2026
 
 - A dynamic `new` or `edit` that calls `render` itself, such as
   `render layout: 'panel'`, now renders what was typed. Only Rails' implicit
   render used to be assigned to.
 
-## 0.6.0
+## [v0.6.0] Sep 26, 2026
 
 - **Breaking:** the Stimulus controller is gone, along with the
   `@hotwired/stimulus` peer dependency. The script listens on the document
@@ -59,7 +65,7 @@
 - A form inside a Turbo Frame asks for, and morphs, only that frame, and marks
   the form and frame busy while its request is out.
 
-## 0.5.0
+## [v0.5.0] Sep 25, 2026
 
 - **Breaking:** a trigger reloads its own page with the form's state in the
   query string, and the form assigns that state to its object before its fields
@@ -70,7 +76,7 @@
 - A reload carries an `X-Turbo-Form` header and runs in a transaction that is
   always rolled back; a request without the header assigns nothing.
 
-## 0.4.0
+## [v0.4.0] Sep 23, 2026
 
 - The endpoint rebuilds the form's own object instead of a blank one. An edit
   form's record is found again by id, so nested records posted with ids no
@@ -96,7 +102,7 @@
   form re-renders as the new subclass instead of raising `SubclassNotFound` or
   keeping the saved one.
 
-## 0.3.0
+## [v0.3.0] Sep 22, 2026
 
 - `dynamic_trigger:` takes a hash: `{ event:, url:, params: }`. A trigger can now
   send the form to an endpoint of its own and add to what it sends, so one form
@@ -109,13 +115,23 @@
   Bundled apps installing it by the old `@rolemodel/turbo_form` name need to
   update the dependency and the import. The gem name is unchanged.
 
-## 0.2.0
+## v0.2.0 Sep 21, 2026
 
 - `expect_dynamic_form_request` now ships with the gem and is available in
   system tests without any setup, under Minitest and RSpec alike.
 
-## 0.1.0
+## v0.1.0 Sep 18, 2026
 
 - Initial extraction. `dynamic:` on a form and `dynamic_trigger:` on a field,
   a signed endpoint that re-renders a convention-named turbo_stream template,
   and a self-registering Stimulus controller.
+
+[v0.9.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.0
+[v0.8.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.8.1
+[v0.8.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.8.0
+[v0.7.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.7.1
+[v0.7.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.7.0
+[v0.6.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.6.0
+[v0.5.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.5.0
+[v0.4.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.4.0
+[v0.3.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.3.0
