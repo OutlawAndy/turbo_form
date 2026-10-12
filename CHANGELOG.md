@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.9.1] Oct 12, 2026
+
+- Date and link each CHANGELOG release (#36)
+- Use the shared release workflow from RoleModel/actions (#35)
+
 ## [v0.9.0] Sep 29, 2026
 
 - The engine includes `TurboForm::Controller` in `ActionController::Base` and
@@ -126,6 +131,7 @@
   a signed endpoint that re-renders a convention-named turbo_stream template,
   and a self-registering Stimulus controller.
 
+[v0.9.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.1
 [v0.9.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.0
 [v0.8.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.8.1
 [v0.8.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.8.0
