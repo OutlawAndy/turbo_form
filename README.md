@@ -70,9 +70,9 @@ the route concern listens.
 ```
 
 `true` picks the element's natural event: `change` for a select, `click` for a
-button, `input` for everything else. Name an event when you want
-something else — `:blur` on text fields is usually what you want, since the
-default fires on every keystroke. Any event name works, including custom ones
+button, `input` for everything else. An `input` event fires on every keystroke,
+so it waits for a 300ms pause before sending the form. Name an event when you
+want something else, like `:blur`. Any event name works, including custom ones
 dispatched by other Stimulus controllers — `dynamic_trigger: "autocomplete:selected"`
 — as long as the event is dispatched on the field or bubbles up from inside it.
 
@@ -82,6 +82,20 @@ the select and date families where Rails keeps HTML attributes in a separate has
 ```erb
 <%= f.collection_select :category_id, Category.all, :id, :name, dynamic_trigger: true %>
 ```
+
+### `dynamic_debounce:` on a field
+
+```erb
+<%= f.text_field :name, dynamic_trigger: true, dynamic_debounce: 500 %>   <%# wait longer %>
+<%= f.range_field :size, dynamic_trigger: true, dynamic_debounce: false %> <%# don't wait %>
+```
+
+How many milliseconds a trigger waits for its events to pause before sending
+the form, as it stands by then. `input` events wait 300ms unless told
+otherwise; every other event sends at once unless it names a wait.
+
+Text typed into a field while its request is out is kept when the response
+arrives, and a response overtaken by a later one to the same URL isn't rendered.
 
 ### `dynamic_action:` on a field
 
@@ -219,8 +233,9 @@ it doesn't care what the trigger changed.
 
 It handles the common case well and gets out of the way otherwise.
 
-- **No debouncing, request cancellation or loading state** beyond `aria-busy`.
-  Write the action by hand when you need those — that path is still open.
+- **No request cancellation or loading state** beyond `aria-busy`. An overtaken
+  request still runs on the server; its response is just not rendered. Write
+  the action by hand when you need more — that path is still open.
 - **Resourceful pages only.** The form's URL comes from its model, so a page
   whose `new` or `edit` isn't the model's own route has nowhere to send it.
   `dynamic_action:` is the way out, at the cost of writing the action and its

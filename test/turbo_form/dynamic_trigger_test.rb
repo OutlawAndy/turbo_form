@@ -13,6 +13,18 @@ class DynamicTriggerTest < ActionView::TestCase
     assert_equal 'blur', field(:text_field, :notes, dynamic_trigger: :blur)['data-turbo-form-trigger']
   end
 
+  test 'dynamic_debounce: names the wait' do
+    assert_equal '500', field(:text_field, :notes, dynamic_trigger: true, dynamic_debounce: 500)['data-turbo-form-debounce']
+  end
+
+  test 'dynamic_debounce: false waits for nothing' do
+    assert_equal '0', field(:text_field, :notes, dynamic_trigger: true, dynamic_debounce: false)['data-turbo-form-debounce']
+  end
+
+  test 'leaves the wait to the script unless one is named' do
+    assert_nil field(:text_field, :notes, dynamic_trigger: true)['data-turbo-form-debounce']
+  end
+
   test "keeps the caller's own data attributes" do
     attributes = field(:text_field, :notes, dynamic_trigger: true, data: { action: 'autosave#queue' })
 
