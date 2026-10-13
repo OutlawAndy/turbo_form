@@ -120,4 +120,77 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
 
     assert_selector '#summary', text: "Flavor can't be blank"
   end
+
+  test 'a trigger on the input event sends the form once typing pauses' do
+    visit new_widget_path
+    execute_script %(document.getElementById("widget_notes").dataset.turboFormTrigger = "")
+    execute_script %(window.visits = 0; addEventListener("turbo:visit", () => window.visits++))
+
+    expect_dynamic_form_request { fill_in 'Notes', with: 'abc' }
+
+    assert_equal 1, evaluate_script('window.visits')
+    assert_field 'Notes', with: 'abc'
+  end
+
+  test 'a trigger with its debounce turned off sends the form on every input' do
+    visit new_widget_path
+    execute_script %(Object.assign(document.getElementById("widget_notes").dataset, { turboFormTrigger: "", turboFormDebounce: "0" }))
+
+    execute_script %(window.fetches = 0; const { fetch } = window; window.fetch = (...args) => (window.fetches++, fetch(...args)))
+
+    expect_dynamic_form_request { fill_in 'Notes', with: 'abc' }
+
+    assert_equal 3, evaluate_script('window.fetches')
+  end
+
+  test 'a debounced trigger gone from the page by the time it would fire sends nothing' do
+    visit new_widget_path
+    execute_script %(document.getElementById("widget_notes").dataset.turboFormTrigger = "")
+    execute_script %(window.fetches = 0; const { fetch } = window; window.fetch = (...args) => (window.fetches++, fetch(...args)))
+
+    fill_in 'Notes', with: 'abc'
+    execute_script %(document.getElementById("widget_notes").remove())
+    sleep 0.4 # past the debounce
+
+    assert_equal 0, evaluate_script('window.fetches')
+  end
+
+  test 'what is typed while a debounced request is out survives its response' do
+    visit new_widget_path
+    page.driver.set_cookie('delay_', '0.5')
+    execute_script %(Object.assign(document.getElementById("widget_notes").dataset, { turboFormTrigger: "", turboFormDebounce: "100" }))
+    notes = find_field('Notes')
+
+    expect_dynamic_form_request do
+      notes.send_keys('ab')
+      sleep 0.2 # the debounce has fired and its request is out
+      notes.send_keys('c')
+    end
+
+    assert_equal 'abc', evaluate_script(%(document.getElementById("widget_notes").value))
+  end
+
+  test 'a response overtaken by a later one is not rendered over it' do
+    visit new_widget_path
+    execute_script <<~JS
+      const { fetch } = window
+      window.fetch = async (url, options) => {
+        const response = await fetch(url, options)
+        if (options.body.get("widget[category]") == "fruit") await new Promise(resolve => setTimeout(resolve, 500))
+        return response
+      }
+    JS
+
+    # In one script, since Cuprite waits out the network after each select
+    execute_script <<~JS
+      const category = document.getElementById("widget_category")
+      for (const value of [ "fruit", "vegetable" ]) {
+        category.value = value
+        category.dispatchEvent(new Event("change", { bubbles: true }))
+      }
+    JS
+    sleep 1 # both responses are in
+
+    assert_select 'Flavor', options: %w[carrot pea turnip]
+  end
 end

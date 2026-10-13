@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Triggers on the `input` event wait for a 300ms pause before sending the form;
+  `dynamic_debounce:` names a wait of its own for any trigger, or `false` for none
+- The field being typed in keeps its value when a trigger's response is morphed in
+- A response overtaken by a later one to the same URL is no longer rendered
+
 ## [v0.9.1] Oct 12, 2026
 
 - Date and link each CHANGELOG release (#36)
