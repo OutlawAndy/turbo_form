@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [v0.10.0] Oct 18, 2026
 
 - Triggers on the `input` event wait for a 300ms pause before sending the form;
   `dynamic_debounce:` names a wait of its own for any trigger, or `false` for none
@@ -138,6 +138,7 @@
   a signed endpoint that re-renders a convention-named turbo_stream template,
   and a self-registering Stimulus controller.
 
+[v0.10.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.10.0
 [v0.9.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.1
 [v0.9.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.0
 [v0.8.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.8.1
