@@ -1,4 +1,8 @@
 class WidgetsController < ApplicationController
+  # Cookies rather than params, since the form reloads a URL of its own:
+  # delay_fruit slows a trigger sent with the fruit category, delay_ one sent without.
+  before_action { sleep cookies["delay_#{params.dig(:widget, :category)}"].to_f if request.patch? }
+
   def new
     @widget = Widget.new
   end

@@ -33,21 +33,34 @@ class FormRefresh {
     try {
       const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: { ...this.target.headers, "X-CSRF-Token": csrfToken() } })
 
-      await this.target.render(response)
+      if (!this.superseded) await this.target.render(response)
     } finally {
       this.requestFinished()
     }
   }
 
   requestStarted() {
+    latestRefreshes(this.formElement).set(this.location.href, this)
     markAsBusy(this.formElement, ...this.target.elements)
     Turbo.navigator.formSubmissionStarted(this)
   }
 
   requestFinished() {
-    clearBusyState(this.formElement, ...this.target.elements)
+    if (!this.superseded) clearBusyState(this.formElement, ...this.target.elements)
     Turbo.navigator.formSubmissionFinished(this)
   }
+
+  // Responses can arrive out of order. Only the last one sent to a URL is
+  // rendered, so the page ends up answering the form as it was last sent.
+  get superseded() {
+    return latestRefreshes(this.formElement).get(this.location.href) != this
+  }
+}
+
+const refreshes = new WeakMap()
+
+function latestRefreshes(form) {
+  return refreshes.get(form) ?? refreshes.set(form, new Map).get(form)
 }
 
 class PageTarget {
@@ -146,8 +159,22 @@ class TriggerObserver {
     const trigger = target.closest?.(triggerSelector)
     const form = trigger?.form
 
-    if (form && (trigger.dataset.turboFormAction || form.dataset.turboFormUrl) && eventFor(trigger) == type) this.delegate.triggerFired(form, trigger)
+    if (form && (trigger.dataset.turboFormAction || form.dataset.turboFormUrl) && eventFor(trigger) == type) debounce(trigger, type, () => this.delegate.triggerFired(form, trigger))
   }
+}
+
+const timers = new WeakMap()
+
+// An input event, fired on every keystroke, waits for a 300ms pause before
+// sending the form as it stands by then. data-turbo-form-debounce names a wait
+// of its own for any event, or 0 for none. A trigger gone from the page by then,
+// as when the user has moved on, sends nothing.
+function debounce(trigger, type, fire) {
+  const wait = Number(trigger.dataset.turboFormDebounce ?? (type == "input" ? 300 : 0))
+  if (!wait) return fire()
+
+  clearTimeout(timers.get(trigger))
+  timers.set(trigger, setTimeout(() => trigger.isConnected && fire(), wait))
 }
 
 // A trigger with no event named fires on its element's natural one.
@@ -183,4 +210,13 @@ function countVisit() {
   root.turboFormVisits = Number(root.turboFormVisits || 0) + 1
 }
 
+// A response answers the form as it was sent, which may be a keystroke or more
+// behind the field being typed into. That field keeps what it has.
+function keepFocusedValue(event) {
+  const { target, detail } = event
+
+  if (target == document.activeElement && target.form?.querySelector(triggerSelector) && detail.attributeName == "value") event.preventDefault()
+}
+
 new TriggerObserver({ triggerFired: refresh }, document).start()
+addEventListener("turbo:before-morph-attribute", keepFocusedValue)

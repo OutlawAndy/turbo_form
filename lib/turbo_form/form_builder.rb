@@ -4,13 +4,14 @@ module TurboForm
   #   f.text_field :name, dynamic_trigger: true      # re-render on the default event
   #   f.select :category, categories, {}, dynamic_trigger: :blur
   #   f.select :flavor, flavors, {}, dynamic_action: summary_widgets_path  # stream from a URL of its own
+  #   f.text_field :name, dynamic_trigger: true, dynamic_debounce: 500   # once typing pauses for 500ms
   #
   # `dynamic_trigger:` always has to end up as a data attribute, but where it
   # *arrives* depends on the helper. Most treat their `options` hash as the tag's
   # HTML attributes; the select and date families keep those in a trailing
   # `html_options` instead, which is where these overrides earn their keep.
   module FormBuilder
-    DYNAMIC_OPTIONS = %i[dynamic_trigger dynamic_action].freeze
+    DYNAMIC_OPTIONS = %i[dynamic_trigger dynamic_action dynamic_debounce].freeze
 
     def select(method, choices = nil, options = {}, html_options = {}, &block)
       super(method, choices, *hoist_trigger(options, html_options), &block)
@@ -85,17 +86,20 @@ module TurboForm
     def self.absorb_trigger(attributes, template)
       return attributes unless attributes.keys.intersect?(DYNAMIC_OPTIONS)
 
-      trigger, action = attributes.values_at(*DYNAMIC_OPTIONS)
+      trigger, action, debounce = attributes.values_at(*DYNAMIC_OPTIONS)
       attributes = attributes.except(*DYNAMIC_OPTIONS)
       trigger ||= action.present?
       return attributes unless trigger
 
-      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: (template.url_for(action) if action) })
+      attributes.merge(data: { **attributes[:data].to_h, turbo_form_trigger: trigger_event(trigger), turbo_form_action: (template.url_for(action) if action), turbo_form_debounce: debounce_wait(debounce) })
     end
 
     # Left blank for `true`, which the script reads as the element's own
     # default: `change` for a select, `input` for a text field, `click` for a
     # button.
     def self.trigger_event(trigger) = trigger == true ? '' : trigger.to_s
+
+    # The script debounces input events on its own; `false` turns that off.
+    def self.debounce_wait(debounce) = debounce == false ? 0 : debounce
   end
 end
