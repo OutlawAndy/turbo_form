@@ -1,5 +1,12 @@
 # turbo_form
 
+<div>
+  <img src="https://github.com/OutlawAndy/turbo_form/actions/workflows/ci.yml/badge.svg" alt="CI">
+  <img src="https://img.shields.io/gem/v/turbo_form?label=rubygems" alt="RubyGems">
+  <img src="https://img.shields.io/npm/v/@rolemodel/turbo-form?label=npm" alt="npm">
+</div>
+<br/>
+
 Dynamic forms for Rails, by convention.
 
 ![title image](title_image.png)
