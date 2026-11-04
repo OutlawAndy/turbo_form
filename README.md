@@ -169,8 +169,9 @@ object in `@form`, say, where `@widget` already means one of the records it
 wraps — name it, and `widget_params` still permits it:
 
 ```ruby
-private
-def turbo_form_resource_name = :form
+class WidgetsController < ApplicationController
+  self.turbo_form_resource_name = :form
+end
 ```
 
 ### Switching an STI subclass
