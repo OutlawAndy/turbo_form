@@ -5,12 +5,17 @@ module TurboForm
   # implicitly, or with its own `render layout: 'panel'`.
   #
   # Leans on the scaffold's conventions: the action builds `@<resource>` and
-  # `<resource>_params` permits the form.
+  # `<resource>_params` permits the form. A controller whose form object goes by
+  # another name sets `self.turbo_form_resource_name = :form`.
   module Controller
     extend ActiveSupport::Concern
 
     included do
       helper_method :turbo_form_render?
+
+      # The instance variable `new` and `edit` build the form's object in, when
+      # it isn't the controller's namesake.
+      class_attribute :turbo_form_resource_name, instance_accessor: false
     end
 
     # Public, as Rails' own is. ActionController::Base's public methods are never
@@ -31,12 +36,12 @@ module TurboForm
 
     def dynamic_form_assignment
       resource = turbo_form_resource.extend(TurboForm::Resource).dynamic_assign(turbo_form_resource_params)
-      instance_variable_set(:"@#{turbo_form_resource_name}", resource)
+      instance_variable_set(turbo_form_ivar, resource)
     end
 
-    def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
-    def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
-    def turbo_form_resource_name = controller_name.singularize
+    def turbo_form_resource = instance_variable_get(turbo_form_ivar)
+    def turbo_form_resource_params = send(:"#{controller_name.singularize}_params")
+    def turbo_form_ivar = :"@#{self.class.turbo_form_resource_name || controller_name.singularize}"
 
     # Active Record saves `has_many` writers and `*_ids=` on assignment, and
     # this request exists only to render.

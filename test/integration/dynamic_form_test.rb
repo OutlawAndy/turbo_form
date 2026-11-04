@@ -16,6 +16,13 @@ class DynamicFormTest < ActionDispatch::IntegrationTest
     assert_response :success
   end
 
+  test 'a controller names the instance variable its form object lives in' do
+    patch new_order_url, params: { widget: { category: 'fruit' } }
+
+    assert_response :success
+    assert_select 'h1', text: 'New fruit order'
+  end
+
   test 'an ordinary visit with the state in its URL ignores it' do
     get new_widget_url, params: { widget: { category: 'fruit' } }
 

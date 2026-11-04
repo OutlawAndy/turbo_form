@@ -164,6 +164,16 @@ For a `WidgetsController`:
   themselves — `render layout: 'panel'` is fine. The values are assigned just
   before it renders; an action that redirects still redirects.
 
+When `new` and `edit` build the form's object under another name — a bulk form
+object in `@form`, say, where `@widget` already means one of the records it
+wraps — name it, and `widget_params` still permits it:
+
+```ruby
+class WidgetsController < ApplicationController
+  self.turbo_form_resource_name = :form
+end
+```
+
 ### Switching an STI subclass
 
 When the submitted values include the inheritance column, the object is switched
