@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.11.0] Nov 4, 2026
+
+- Let a controller override the conventional instance variable name (#42)
+- Add CI, RubyGems, and npm badges to the README (#39)
+
 ## [v0.10.0] Oct 18, 2026
 
 - Triggers on the `input` event wait for a 300ms pause before sending the form;
@@ -138,6 +143,7 @@
   a signed endpoint that re-renders a convention-named turbo_stream template,
   and a self-registering Stimulus controller.
 
+[v0.11.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.11.0
 [v0.10.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.10.0
 [v0.9.1]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.1
 [v0.9.0]: https://github.com/OutlawAndy/turbo_form/releases/tag/v0.9.0
