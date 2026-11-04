@@ -5,7 +5,8 @@ module TurboForm
   # implicitly, or with its own `render layout: 'panel'`.
   #
   # Leans on the scaffold's conventions: the action builds `@<resource>` and
-  # `<resource>_params` permits the form.
+  # `<resource>_params` permits the form. A controller whose form object goes by
+  # another name overrides `turbo_form_resource_name`.
   module Controller
     extend ActiveSupport::Concern
 
@@ -35,7 +36,9 @@ module TurboForm
     end
 
     def turbo_form_resource = instance_variable_get(:"@#{turbo_form_resource_name}")
-    def turbo_form_resource_params = send(:"#{turbo_form_resource_name}_params")
+    def turbo_form_resource_params = send(:"#{controller_name.singularize}_params")
+
+    # The instance variable `new` and `edit` build the form's object in.
     def turbo_form_resource_name = controller_name.singularize
 
     # Active Record saves `has_many` writers and `*_ids=` on assignment, and
