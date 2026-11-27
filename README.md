@@ -104,6 +104,11 @@ otherwise; every other event sends at once unless it names a wait.
 Text typed into a field while its request is out is kept when the response
 arrives, and a response overtaken by a later one to the same URL isn't rendered.
 
+A widget built around a trigger, like a custom select that keeps its focus in an
+input of its own, is left as it is while the response renders, so it stays
+focused and open. That's the smallest element holding both the trigger and the
+focus, never the form itself; the rest of the page is morphed as usual.
+
 ### `dynamic_action:` on a field
 
 ```erb

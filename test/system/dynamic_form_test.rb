@@ -44,6 +44,25 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     expect_dynamic_form_request { execute_script %(document.getElementById("widget_notes").dispatchEvent(new CustomEvent("autocomplete:selected", { bubbles: true }))) }
   end
 
+  test 'a widget built around the trigger keeps its focus while the rest of the page reloads' do
+    visit new_widget_path
+    choose_category_in_widget 'fruit'
+
+    assert_selector 'h1', text: 'New fruit widget'
+    assert_select 'Flavor', options: %w[apple banana cherry]
+    assert_equal 'category-widget', evaluate_script('document.activeElement.id')
+  end
+
+  test 'a widget built around the trigger keeps its focus while its frame reloads' do
+    visit new_widget_path
+    page.driver.set_cookie('framed', '1')
+    visit new_widget_path
+    choose_category_in_widget 'fruit'
+
+    assert_select 'Flavor', options: %w[apple banana cherry]
+    assert_equal 'category-widget', evaluate_script('document.activeElement.id')
+  end
+
   test 'a second trigger reloads again' do
     visit new_widget_path
 
@@ -192,5 +211,21 @@ class DynamicFormSystemTest < ApplicationSystemTestCase
     sleep 1 # both responses are in
 
     assert_select 'Flavor', options: %w[carrot pea turnip]
+  end
+
+  private
+
+  # Stands in for a custom select, like Tom Select: an input built beside the real select holds
+  # focus, and choosing in it sets the select and fires its change.
+  def choose_category_in_widget(category)
+    execute_script <<~JS
+      const widget = Object.assign(document.createElement("input"), { id: "category-widget" })
+      document.getElementById("widget_category").after(widget)
+      widget.focus()
+    JS
+
+    expect_dynamic_form_request do
+      execute_script %(Object.assign(document.getElementById("widget_category"), { value: "#{category}" }).dispatchEvent(new Event("change", { bubbles: true })))
+    end
   end
 end
