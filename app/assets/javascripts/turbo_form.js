@@ -24,6 +24,7 @@ class FormRefresh {
     const action = trigger?.dataset.turboFormAction
 
     this.formElement = formElement
+    this.trigger = trigger
     this.location = new URL(action || formElement.dataset.turboFormUrl, location.href)
     this.target = action ? new StreamTarget() : targetFor(formElement)
   }
@@ -33,7 +34,7 @@ class FormRefresh {
     try {
       const response = await Turbo.fetch(this.location, { method: "PATCH", body: new FormData(this.formElement), headers: { ...this.target.headers, "X-CSRF-Token": csrfToken() } })
 
-      if (!this.superseded) await this.target.render(response)
+      if (!this.superseded) await this.target.render(response, this.trigger)
     } finally {
       this.requestFinished()
     }
@@ -67,10 +68,11 @@ class PageTarget {
   elements = []
   headers = { Accept: "text/html" }
 
-  async render(response) {
+  async render(response, trigger) {
     const responseHTML = await response.text()
 
-    document.addEventListener("turbo:load", countVisit, { once: true })
+    keepFocusedWidget(trigger)
+    document.addEventListener("turbo:load", () => (keptWidget = null, countVisit()), { once: true })
     Turbo.visit(location.href, {
       action: "replace",
       shouldCacheSnapshot: false,
@@ -90,10 +92,12 @@ class FrameTarget {
     return { Accept: "text/html", "Turbo-Frame": this.element.id }
   }
 
-  async render(response) {
+  async render(response, trigger) {
     const frame = new DOMParser().parseFromString(await response.text(), "text/html").getElementById(this.element.id)
 
+    keepFocusedWidget(trigger)
     Turbo.morphTurboFrameElements(this.element, frame)
+    keptWidget = null
     countVisit()
   }
 }
@@ -218,5 +222,25 @@ function keepFocusedValue(event) {
   if (target == document.activeElement && target.form?.querySelector(triggerSelector) && detail.attributeName == "value") event.preventDefault()
 }
 
+// A widget built around a trigger, like a custom select, can hold the focus in an
+// element of its own beside the trigger. The server never rendered that element,
+// so the morph would remove it mid-use. While a response renders, the smallest
+// element holding both the trigger and the focus is left as it is, short of the
+// form itself.
+let keptWidget = null
+
+function keepFocusedWidget(trigger) {
+  const focused = document.activeElement
+  let element = trigger?.isConnected && focused != trigger ? trigger.parentElement : null
+
+  while (element && !element.contains(focused)) element = element.parentElement
+  keptWidget = element?.contains(trigger.form) ? null : element
+}
+
+function keepWidget(event) {
+  if (event.target == keptWidget) event.preventDefault()
+}
+
 new TriggerObserver({ triggerFired: refresh }, document).start()
 addEventListener("turbo:before-morph-attribute", keepFocusedValue)
+addEventListener("turbo:before-morph-element", keepWidget)
